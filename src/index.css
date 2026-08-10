@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+}
+
+@layer base {
+  :root {
+    /* Strike brand palette — mirrors Vendor app DESIGN_SYSTEM.md v1.0 */
+    --background: #F6F7FA;
+    --foreground: #1A1A1A;
+
+    --card: #FFFFFF;
+    --card-foreground: #1A1A1A;
+
+    --primary: #CC2200;
+    --primary-foreground: #FFFFFF;
+
+    --secondary: #EDEEF2;
+    --secondary-foreground: #1A1A1A;
+
+    --muted: #F6F7FA;
+    --muted-foreground: #5A6272;
+
+    --accent: #EDEEF2;
+    --accent-foreground: #1A1A1A;
+
+    --destructive: #DC2626;
+    --destructive-foreground: #FFFFFF;
+
+    --border: #EAECEF;
+    --input: #EAECEF;
+    --ring: #CC2200;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: #17181B;
+    --foreground: #F5F5F5;
+
+    --card: #1E1F23;
+    --card-foreground: #F5F5F5;
+
+    --primary: #FF5C3D;
+    --primary-foreground: #1A0500;
+
+    --secondary: #2A2B30;
+    --secondary-foreground: #F5F5F5;
+
+    --muted: #2A2B30;
+    --muted-foreground: #A0A4AD;
+
+    --accent: #2A2B30;
+    --accent-foreground: #F5F5F5;
+
+    --destructive: #F87171;
+    --destructive-foreground: #1A0500;
+
+    --border: #33343A;
+    --input: #33343A;
+    --ring: #FF5C3D;
+  }
+
+  * {
+    border-color: var(--border);
+    outline-color: var(--ring);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Smooth theme transitions */
+  *, *::before, *::after {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-duration: 150ms;
+    transition-timing-function: ease;
+  }
+
+  /* Thin scrollbar for sidebar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: var(--border);
+    border-radius: 2px;
+  }
+
+  /* Focus visible ring for keyboard navigation */
+  [data-focus-visible-added] {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}

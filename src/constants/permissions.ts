@@ -1,0 +1,63 @@
+export const PERMISSIONS = {
+  USERS: {
+    VIEW: 'USER_VIEW',
+    EDIT: 'USER_EDIT',
+    DELETE: 'USER_DELETE',
+    NOTIFY: 'USER_NOTIFY',
+  },
+  VENDORS: {
+    VIEW: 'VENDOR_VIEW',
+    EDIT: 'VENDOR_EDIT',
+    APPROVE: 'VENDOR_APPROVE',
+    DISABLE: 'VENDOR_DISABLE',
+  },
+  STORES: {
+    VIEW: 'STORE_VIEW',
+    CREATE: 'STORE_CREATE',
+    EDIT: 'STORE_EDIT',
+    DELETE: 'STORE_DELETE',
+  },
+  MENUS: {
+    EDIT: 'MENU_EDIT',
+  },
+  CARDS: {
+    CREATE: 'CARD_CREATE',
+    EDIT: 'CARD_EDIT',
+    DELETE: 'CARD_DELETE',
+  },
+  COUPONS: {
+    CREATE: 'COUPON_CREATE',
+    EDIT: 'COUPON_EDIT',
+  },
+  PAYMENTS: {
+    VIEW: 'PAYMENT_VIEW',
+  },
+  WITHDRAWALS: {
+    APPROVE: 'WITHDRAW_APPROVE',
+  },
+  ANALYTICS: {
+    VIEW: 'ANALYTICS_VIEW',
+  },
+  REPORTS: {
+    EXPORT: 'REPORT_EXPORT',
+  },
+  SETTINGS: {
+    EDIT: 'SETTINGS_EDIT',
+  },
+  API_KEYS: {
+    EDIT: 'APIKEY_EDIT',
+  },
+  NOTIFICATIONS: {
+    SEND: 'NOTIFICATION_SEND',
+  },
+  BANNERS: {
+    MANAGE: 'BANNER_MANAGE',
+  },
+  COMMISSION: {
+    EDIT: 'COMMISSION_EDIT',
+  },
+} as const
+
+export type Permission = {
+  [K in keyof typeof PERMISSIONS]: (typeof PERMISSIONS)[K][keyof (typeof PERMISSIONS)[K]]
+}[keyof typeof PERMISSIONS]
