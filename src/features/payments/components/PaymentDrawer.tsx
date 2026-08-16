@@ -1,16 +1,30 @@
 import { useState, useCallback, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, User, Store, Calendar, Hash, CreditCard, RotateCcw, MessageSquare } from 'lucide-react'
+import { X, User, Store, Calendar, Hash, CreditCard, RotateCcw, MessageSquare, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDateTime } from '@/utils/helpers/date'
-import { useRefundPayment } from '../hooks/usePayments'
-import type { PaymentResponse, PaymentStatus } from '../types/payment.types'
+import { useReversePayment } from '../hooks/usePayments'
+import { resolveCustomerName } from '@/features/redemptions/hooks/useRedemptions'
+import { resolveVendorName } from '@/features/withdrawals/hooks/useWithdrawals'
+import type { PaymentResponse, PaymentStatus, PaymentReversalReason } from '../types/payment.types'
+import type { UserDetails } from '@/features/users/types/user.types'
+import type { VendorRecord } from '@/features/vendors/types/vendor.types'
 
 function statusStyle(s: PaymentStatus) {
   if (s === 'COMPLETED') return 'bg-green-100 text-green-700 dark:bg-green-400/10 dark:text-green-400'
   if (s === 'FAILED') return 'bg-red-100 text-red-700 dark:bg-red-400/10 dark:text-red-400'
   if (s === 'REFUNDED') return 'bg-violet-100 text-violet-700 dark:bg-violet-400/10 dark:text-violet-400'
   return 'bg-amber-100 text-amber-700 dark:bg-amber-400/10 dark:text-amber-400'
+}
+
+const REVERSAL_REASONS: { value: PaymentReversalReason; label: string }[] = [
+  { value: 'DUPLICATE_ENTRY', label: 'Duplicate entry' },
+  { value: 'CUSTOMER_CANCELLED', label: 'Customer cancelled at purchase' },
+  { value: 'OTHER', label: 'Other' },
+]
+
+function reasonLabel(reason: string | null): string {
+  return REVERSAL_REASONS.find((r) => r.value === reason)?.label ?? reason ?? '—'
 }
 
 function Row({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: React.ReactNode }) {
@@ -27,26 +41,35 @@ function Row({ icon: Icon, label, value }: { icon: React.ElementType; label: str
 
 interface PaymentDrawerProps {
   payment: PaymentResponse | null
+  userMap: Map<number, UserDetails>
+  vendorMap: Map<number, VendorRecord>
   onClose: () => void
 }
 
-export function PaymentDrawer({ payment, onClose }: PaymentDrawerProps) {
+export function PaymentDrawer({ payment, userMap, vendorMap, onClose }: PaymentDrawerProps) {
   return (
     <AnimatePresence>
       {payment && (
         <>
           <motion.div key="bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
             className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden />
-          <DrawerContent key={payment.id} payment={payment} onClose={onClose} />
+          <DrawerContent
+            key={payment.id}
+            payment={payment}
+            userName={resolveCustomerName(null, payment.userId, userMap)}
+            vendorName={resolveVendorName(payment.vendorId, vendorMap)}
+            onClose={onClose}
+          />
         </>
       )}
     </AnimatePresence>
   )
 }
 
-function DrawerContent({ payment, onClose }: { payment: PaymentResponse; onClose: () => void }) {
-  const [reason, setReason] = useState('')
-  const { mutate: refund, isPending } = useRefundPayment()
+function DrawerContent({ payment, userName, vendorName, onClose }: { payment: PaymentResponse; userName: string; vendorName: string; onClose: () => void }) {
+  const [reasonCode, setReasonCode] = useState<PaymentReversalReason>('DUPLICATE_ENTRY')
+  const [note, setNote] = useState('')
+  const { mutate: reverse, isPending } = useReversePayment()
 
   const close = useCallback(() => onClose(), [onClose])
   useEffect(() => {
@@ -55,7 +78,7 @@ function DrawerContent({ payment, onClose }: { payment: PaymentResponse; onClose
     return () => document.removeEventListener('keydown', h)
   }, [close])
 
-  const canRefund = payment.status === 'COMPLETED'
+  const canReverse = payment.status === 'COMPLETED'
 
   return (
     <motion.aside initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
@@ -87,16 +110,11 @@ function DrawerContent({ payment, onClose }: { payment: PaymentResponse; onClose
             Card price ₹{Number(payment.cardPrice).toLocaleString('en-IN', { minimumFractionDigits: 2 })} · Discount ₹{Number(payment.discountApplied).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
           </p>
         )}
-        {payment.refundAmount && (
-          <p className="mt-0.5 text-xs text-violet-600 dark:text-violet-400">
-            Refunded: ₹{Number(payment.refundAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-          </p>
-        )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-5 space-y-4">
-        <Row icon={User} label="User" value={`User #${payment.userId}`} />
-        <Row icon={Store} label="Vendor" value={`Vendor #${payment.vendorId}`} />
+        <Row icon={User} label="User" value={userName} />
+        <Row icon={Store} label="Vendor" value={vendorName} />
         <Row icon={MessageSquare} label="Card" value={payment.cardName} />
         <Row icon={CreditCard} label="Gateway" value={payment.gateway || '—'} />
         {payment.gatewayTransactionId && (
@@ -107,39 +125,62 @@ function DrawerContent({ payment, onClose }: { payment: PaymentResponse; onClose
         )}
         <Row icon={Calendar} label="Created At" value={formatDateTime(payment.createdAt)} />
         {payment.refundedAt && (
-          <Row icon={Calendar} label="Refunded At" value={formatDateTime(payment.refundedAt)} />
+          <Row icon={Calendar} label="Reversed At" value={formatDateTime(payment.refundedAt)} />
         )}
         {payment.refundReason && (
-          <Row icon={MessageSquare} label="Refund Reason" value={
+          <Row icon={MessageSquare} label="Reversal Reason" value={
             <span className="inline-block rounded-lg bg-violet-50 px-2 py-1 text-xs text-violet-700 dark:bg-violet-400/10 dark:text-violet-400">
-              {payment.refundReason}
+              {reasonLabel(payment.refundReason)}
             </span>
           } />
         )}
+        {payment.refundNote && (
+          <Row icon={MessageSquare} label="Reversal Note" value={payment.refundNote} />
+        )}
       </div>
 
-      {canRefund && (
+      {canReverse && (
         <div className="border-t border-border p-5 space-y-3">
+          <div className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-400">
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span>Reversing cancels the customer&apos;s subscription (blocks further wallet spend) and voids the vendor&apos;s commission for it, if not already settled.</span>
+          </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-              Refund Reason <span className="text-destructive">*</span>
-            </label>
+            <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Reason</label>
+            <div className="flex flex-col gap-1.5">
+              {REVERSAL_REASONS.map((r) => (
+                <label key={r.value} className="flex items-center gap-2 text-sm text-foreground">
+                  <input
+                    type="radio"
+                    name="reversal-reason"
+                    value={r.value}
+                    checked={reasonCode === r.value}
+                    onChange={() => setReasonCode(r.value)}
+                    disabled={isPending}
+                  />
+                  {r.label}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Note (optional)</label>
             <textarea
               rows={2}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Enter reason for refund…"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Add any extra detail for this reversal…"
               disabled={isPending}
               className="block w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
             />
           </div>
           <button
-            onClick={() => refund({ id: payment.id, reason })}
-            disabled={isPending || !reason.trim()}
+            onClick={() => reverse({ id: payment.id, reasonCode, note: note.trim() || undefined })}
+            disabled={isPending}
             className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-violet-700 disabled:opacity-60"
           >
             <RotateCcw className="h-4 w-4" />
-            {isPending ? 'Processing…' : 'Process Refund'}
+            {isPending ? 'Reversing…' : 'Reverse Payment'}
           </button>
         </div>
       )}

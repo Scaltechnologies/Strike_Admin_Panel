@@ -9,6 +9,9 @@ export const couponsApi = {
   getActive: (page: number, size: number): Promise<CouponPage> =>
     axiosInstance.get(ENDPOINTS.COUPONS.ACTIVE, { params: { page, size } }).then((r) => r.data as CouponPage),
 
+  getPending: (page: number, size: number): Promise<CouponPage> =>
+    axiosInstance.get(ENDPOINTS.COUPONS.PENDING, { params: { page, size } }).then((r) => r.data as CouponPage),
+
   getStats: (): Promise<CouponStats> =>
     axiosInstance.get(ENDPOINTS.COUPONS.STATS).then((r) => r.data as CouponStats),
 
@@ -26,4 +29,10 @@ export const couponsApi = {
 
   deactivate: (id: number): Promise<void> =>
     axiosInstance.patch(ENDPOINTS.COUPONS.DEACTIVATE(String(id))).then(() => undefined),
+
+  approve: (id: number): Promise<void> =>
+    axiosInstance.patch(ENDPOINTS.COUPONS.APPROVE(String(id))).then(() => undefined),
+
+  reject: (id: number, reason: string): Promise<void> =>
+    axiosInstance.patch(ENDPOINTS.COUPONS.REJECT(String(id)), { reason }).then(() => undefined),
 }

@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Building2, Landmark, Hash, Calendar, MessageSquare, CheckCircle2, XCircle, User } from 'lucide-react'
+import { X, Building2, Landmark, Hash, Calendar, MessageSquare, CheckCircle2, XCircle, User, Smartphone } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDateTime } from '@/utils/helpers/date'
-import { useApproveWithdrawal, useRejectWithdrawal } from '../hooks/useWithdrawals'
+import { useApproveWithdrawal, useRejectWithdrawal, resolveVendorName } from '../hooks/useWithdrawals'
 import type { WithdrawalResponse, WithdrawalStatus } from '../types/withdrawal.types'
+import type { VendorRecord } from '@/features/vendors/types/vendor.types'
 
 function statusStyle(s: WithdrawalStatus) {
   if (s === 'APPROVED') return 'bg-green-100 text-green-700 dark:bg-green-400/10 dark:text-green-400'
@@ -26,24 +27,25 @@ function Row({ icon: Icon, label, value }: { icon: React.ElementType; label: str
 
 interface WithdrawalDrawerProps {
   withdrawal: WithdrawalResponse | null
+  vendorMap: Map<number, VendorRecord>
   onClose: () => void
 }
 
-export function WithdrawalDrawer({ withdrawal, onClose }: WithdrawalDrawerProps) {
+export function WithdrawalDrawer({ withdrawal, vendorMap, onClose }: WithdrawalDrawerProps) {
   return (
     <AnimatePresence>
       {withdrawal && (
         <>
           <motion.div key="bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
             className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden />
-          <DrawerContent key={withdrawal.id} withdrawal={withdrawal} onClose={onClose} />
+          <DrawerContent key={withdrawal.id} withdrawal={withdrawal} vendorName={resolveVendorName(withdrawal.vendorId, vendorMap)} onClose={onClose} />
         </>
       )}
     </AnimatePresence>
   )
 }
 
-function DrawerContent({ withdrawal, onClose }: { withdrawal: WithdrawalResponse; onClose: () => void }) {
+function DrawerContent({ withdrawal, vendorName, onClose }: { withdrawal: WithdrawalResponse; vendorName: string; onClose: () => void }) {
   const [adminNote, setAdminNote] = useState('')
   const { mutate: approve, isPending: approving } = useApproveWithdrawal()
   const { mutate: reject, isPending: rejecting } = useRejectWithdrawal()
@@ -72,7 +74,7 @@ function DrawerContent({ withdrawal, onClose }: { withdrawal: WithdrawalResponse
               {withdrawal.status}
             </span>
           </div>
-          <p className="mt-0.5 text-xs text-muted-foreground">Vendor #{withdrawal.vendorId}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{vendorName}</p>
         </div>
         <button onClick={close} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground">
           <X className="h-4 w-4" />
@@ -89,10 +91,16 @@ function DrawerContent({ withdrawal, onClose }: { withdrawal: WithdrawalResponse
 
       {/* Details */}
       <div className="flex-1 overflow-y-auto p-5 space-y-4">
-        <Row icon={Building2} label="Bank Account Name" value={withdrawal.bankAccountName} />
-        <Row icon={Landmark} label="Account Number" value={<span className="font-mono">{withdrawal.bankAccountNumber}</span>} />
-        <Row icon={Hash} label="IFSC Code" value={<span className="font-mono">{withdrawal.ifscCode}</span>} />
-        <Row icon={User} label="Vendor" value={`Vendor #${withdrawal.vendorId}`} />
+        {withdrawal.method === 'UPI' ? (
+          <Row icon={Smartphone} label="UPI ID" value={<span className="font-mono">{withdrawal.upiId}</span>} />
+        ) : (
+          <>
+            <Row icon={Building2} label="Bank Account Name" value={withdrawal.bankAccountName} />
+            <Row icon={Landmark} label="Account Number" value={<span className="font-mono">{withdrawal.bankAccountNumber}</span>} />
+            <Row icon={Hash} label="IFSC Code" value={<span className="font-mono">{withdrawal.ifscCode}</span>} />
+          </>
+        )}
+        <Row icon={User} label="Vendor" value={vendorName} />
         {withdrawal.note && <Row icon={MessageSquare} label="Vendor Note" value={withdrawal.note} />}
         <Row icon={Calendar} label="Requested At" value={formatDateTime(withdrawal.createdAt)} />
         {withdrawal.reviewedAt && (

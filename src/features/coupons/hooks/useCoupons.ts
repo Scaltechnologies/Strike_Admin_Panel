@@ -6,6 +6,7 @@ import type { CreateCouponRequest } from '../types/coupon.types'
 export const COUPON_QUERY_KEYS = {
   all: ['coupons'] as const,
   list: (page: number, size: number) => ['coupons', 'list', page, size] as const,
+  pending: (page: number, size: number) => ['coupons', 'pending', page, size] as const,
   detail: (id: number) => ['coupons', 'detail', id] as const,
   stats: ['coupons', 'stats'] as const,
 }
@@ -16,6 +17,14 @@ export function useCouponList(page: number, size: number) {
   return useQuery({
     queryKey: COUPON_QUERY_KEYS.list(page, size),
     queryFn: () => couponsApi.list(page, size),
+    ...DEFAULTS,
+  })
+}
+
+export function usePendingCoupons(page: number, size: number) {
+  return useQuery({
+    queryKey: COUPON_QUERY_KEYS.pending(page, size),
+    queryFn: () => couponsApi.getPending(page, size),
     ...DEFAULTS,
   })
 }
@@ -89,5 +98,33 @@ export function useDeactivateCoupon() {
       void qc.invalidateQueries({ queryKey: COUPON_QUERY_KEYS.detail(id) })
     },
     onError: () => toast.error('Failed to deactivate coupon.'),
+  })
+}
+
+export function useApproveCoupon() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => couponsApi.approve(id),
+    meta: { suppressError: true },
+    onSuccess: (_data, id) => {
+      toast.success('Coupon request approved — it is now active.')
+      void qc.invalidateQueries({ queryKey: COUPON_QUERY_KEYS.all })
+      void qc.invalidateQueries({ queryKey: COUPON_QUERY_KEYS.detail(id) })
+    },
+    onError: () => toast.error('Failed to approve coupon request.'),
+  })
+}
+
+export function useRejectCoupon() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: number; reason: string }) => couponsApi.reject(id, reason),
+    meta: { suppressError: true },
+    onSuccess: (_data, { id }) => {
+      toast.success('Coupon request rejected.')
+      void qc.invalidateQueries({ queryKey: COUPON_QUERY_KEYS.all })
+      void qc.invalidateQueries({ queryKey: COUPON_QUERY_KEYS.detail(id) })
+    },
+    onError: () => toast.error('Failed to reject coupon request.'),
   })
 }

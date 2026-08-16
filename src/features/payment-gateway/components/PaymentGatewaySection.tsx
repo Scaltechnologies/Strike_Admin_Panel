@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CreditCard, ShieldAlert, RefreshCw } from 'lucide-react'
+import { CreditCard, ShieldAlert, RefreshCw, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDateTime } from '@/utils/helpers/date'
 import { useAuthStore } from '@/store/auth-store'
@@ -83,6 +83,8 @@ export function PaymentGatewaySection() {
 
 function PaymentGatewayForm({ config }: { config: PaymentGatewayConfigResponse | null }) {
   const { mutate: save, isPending } = useUpdatePaymentGatewayConfig(PROVIDER)
+  const [showKeySecret, setShowKeySecret] = useState(false)
+  const [showWebhookSecret, setShowWebhookSecret] = useState(false)
 
   const [form, setForm] = useState<FormState>({
     keyId: config?.keyId ?? '',
@@ -121,7 +123,7 @@ function PaymentGatewayForm({ config }: { config: PaymentGatewayConfigResponse |
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
             Key ID <span className="text-destructive">*</span>
@@ -149,34 +151,60 @@ function PaymentGatewayForm({ config }: { config: PaymentGatewayConfigResponse |
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
             Key Secret {!isConfigured && <span className="text-destructive">*</span>}
           </label>
-          <input
-            type="password"
-            className={cn(INPUT_CLS, 'font-mono')}
-            value={form.keySecret}
-            onChange={(e) => setField('keySecret', e.target.value)}
-            placeholder={isConfigured ? `Currently ${config?.keySecretMasked ?? '••••'} — leave blank to keep` : 'Paste the key secret'}
-            disabled={isPending}
-            autoComplete="new-password"
-          />
+          <div className="relative">
+            <input
+              type={showKeySecret ? 'text' : 'password'}
+              className={cn(INPUT_CLS, 'pr-9 font-mono')}
+              value={form.keySecret}
+              onChange={(e) => setField('keySecret', e.target.value)}
+              placeholder={isConfigured ? `Currently ${config?.keySecretMasked ?? '••••'} — leave blank to keep` : 'Paste the key secret'}
+              disabled={isPending}
+              autoComplete="new-password"
+            />
+            {form.keySecret && (
+              <button
+                type="button"
+                onClick={() => setShowKeySecret((v) => !v)}
+                tabIndex={-1}
+                className="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-muted-foreground hover:text-foreground"
+                aria-label={showKeySecret ? 'Hide key secret' : 'Show key secret'}
+              >
+                {showKeySecret ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              </button>
+            )}
+          </div>
         </div>
         <div>
           <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Webhook Secret</label>
-          <input
-            type="password"
-            className={cn(INPUT_CLS, 'font-mono')}
-            value={form.webhookSecret}
-            onChange={(e) => setField('webhookSecret', e.target.value)}
-            placeholder={config?.webhookSecretConfigured
-              ? `Currently ${config.webhookSecretMasked ?? '••••'} — leave blank to keep`
-              : 'Paste the webhook signing secret'}
-            disabled={isPending}
-            autoComplete="new-password"
-          />
+          <div className="relative">
+            <input
+              type={showWebhookSecret ? 'text' : 'password'}
+              className={cn(INPUT_CLS, 'pr-9 font-mono')}
+              value={form.webhookSecret}
+              onChange={(e) => setField('webhookSecret', e.target.value)}
+              placeholder={config?.webhookSecretConfigured
+                ? `Currently ${config.webhookSecretMasked ?? '••••'} — leave blank to keep`
+                : 'Paste the webhook signing secret'}
+              disabled={isPending}
+              autoComplete="new-password"
+            />
+            {form.webhookSecret && (
+              <button
+                type="button"
+                onClick={() => setShowWebhookSecret((v) => !v)}
+                tabIndex={-1}
+                className="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-muted-foreground hover:text-foreground"
+                aria-label={showWebhookSecret ? 'Hide webhook secret' : 'Show webhook secret'}
+              >
+                {showWebhookSecret ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -188,14 +216,14 @@ function PaymentGatewayForm({ config }: { config: PaymentGatewayConfigResponse |
         disabled={isPending}
       />
 
-      <div className="flex items-center justify-between pt-2">
+      <div className="flex flex-col-reverse items-start gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-muted-foreground">
           {config?.updatedAt
             ? `Last updated ${formatDateTime(config.updatedAt)}`
             : 'Changes take effect for the backend within about a minute — no redeploy needed.'}
         </p>
         <button type="submit" disabled={isPending || !canSubmit}
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60">
+          className="w-full shrink-0 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60 sm:w-auto">
           {isPending ? 'Saving…' : 'Save Changes'}
         </button>
       </div>

@@ -49,7 +49,7 @@ export function RedemptionsPage() {
   const { data: stats, isLoading: statsLoading } = useRedemptionStats()
 
   const rows = useMemo(() => data?.data?.content ?? [], [data])
-  const storeMap = useStoreLookup(rows.map((r) => r.storeId))
+  const { map: storeMap, loading: storeLoading } = useStoreLookup(rows.map((r) => r.storeId))
   const userMap = useUserLookup(rows.map((r) => r.userId))
   const pendingNow = useMemo(() => rows.filter((r) => r.status === 'PENDING').length, [rows])
 
@@ -128,6 +128,7 @@ export function RedemptionsPage() {
           onRefresh={() => void refetch()}
           onView={setSelected}
           storeMap={storeMap}
+          storeLoading={storeLoading}
           userMap={userMap}
         />
       </div>
@@ -135,6 +136,7 @@ export function RedemptionsPage() {
       <RedemptionDrawer
         redemption={selected}
         store={selected ? storeMap.get(selected.storeId) : undefined}
+        storeLoading={selected ? storeLoading.has(selected.storeId) : false}
         userMap={userMap}
         onClose={handleCloseDrawer}
       />

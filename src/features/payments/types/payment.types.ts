@@ -1,5 +1,6 @@
 export type PaymentStatus = 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED'
 export type PaymentGateway = 'MOCK' | 'RAZORPAY' | 'STRIPE' | string
+export type PaymentReversalReason = 'DUPLICATE_ENTRY' | 'CUSTOMER_CANCELLED' | 'OTHER'
 
 export interface PaymentResponse {
   id: number
@@ -18,11 +19,10 @@ export interface PaymentResponse {
   gatewayTransactionId: string | null
   createdAt: string
   updatedAt: string
-  // Not returned by GET /api/admin/payments today — kept optional in case
-  // the refund endpoint response ever grows these.
-  refundAmount?: number | null
-  refundReason?: string | null
-  refundedAt?: string | null
+  refundReason: PaymentReversalReason | null
+  refundNote: string | null
+  refundedAt: string | null
+  refundedBy: number | null
 }
 
 export interface PaymentPage {

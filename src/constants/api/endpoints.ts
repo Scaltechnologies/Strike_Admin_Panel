@@ -75,9 +75,12 @@ export const ENDPOINTS = {
     BASE: '/api/admin/coupons',
     BY_ID: (id: string) => `/api/admin/coupons/${id}`,
     ACTIVE: '/api/admin/coupons/active',
+    PENDING: '/api/admin/coupons/pending',
     STATS: '/api/admin/coupons/stats',
     ACTIVATE: (id: string) => `/api/admin/coupons/${id}/activate`,
     DEACTIVATE: (id: string) => `/api/admin/coupons/${id}/deactivate`,
+    APPROVE: (id: string) => `/api/admin/coupons/${id}/approve`,
+    REJECT: (id: string) => `/api/admin/coupons/${id}/reject`,
     BY_CODE: (code: string) => `/api/admin/coupons/code/${code}`,
   },
   PAYMENTS: {

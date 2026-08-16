@@ -1,9 +1,9 @@
 import { useCallback, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Store as StoreIcon, User, Hash, Calendar, MessageSquare, ShoppingBag, Wallet } from 'lucide-react'
+import { X, Store as StoreIcon, User, Phone, Hash, Calendar, MessageSquare, ShoppingBag, Wallet } from 'lucide-react'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { formatDateTime } from '@/utils/helpers/date'
-import { resolveCustomerName } from '../hooks/useRedemptions'
+import { resolveCustomerName, resolveCustomerPhone } from '../hooks/useRedemptions'
 import type { RedemptionRecord, RedemptionStatus } from '../types/redemption.types'
 import type { StoreRecord } from '@/features/stores/types/store.types'
 import type { UserDetails } from '@/features/users/types/user.types'
@@ -42,27 +42,29 @@ function Row({ icon: Icon, label, value }: { icon: React.ElementType; label: str
 interface RedemptionDrawerProps {
   redemption: RedemptionRecord | null
   store: StoreRecord | undefined
+  storeLoading: boolean
   userMap: Map<number, UserDetails>
   onClose: () => void
 }
 
-export function RedemptionDrawer({ redemption, store, userMap, onClose }: RedemptionDrawerProps) {
+export function RedemptionDrawer({ redemption, store, storeLoading, userMap, onClose }: RedemptionDrawerProps) {
   return (
     <AnimatePresence>
       {redemption && (
         <>
           <motion.div key="bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
             className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden />
-          <DrawerContent key={redemption.id} redemption={redemption} store={store} userMap={userMap} onClose={onClose} />
+          <DrawerContent key={redemption.id} redemption={redemption} store={store} storeLoading={storeLoading} userMap={userMap} onClose={onClose} />
         </>
       )}
     </AnimatePresence>
   )
 }
 
-function DrawerContent({ redemption, store, userMap, onClose }: {
+function DrawerContent({ redemption, store, storeLoading, userMap, onClose }: {
   redemption: RedemptionRecord
   store: StoreRecord | undefined
+  storeLoading: boolean
   userMap: Map<number, UserDetails>
   onClose: () => void
 }) {
@@ -87,9 +89,13 @@ function DrawerContent({ redemption, store, userMap, onClose }: {
             <span className="font-mono text-sm font-semibold text-foreground">Redemption #{redemption.id}</span>
             <StatusBadge status={meta.variant} label={meta.label} size="sm" dot />
           </div>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {store?.name ?? `Store #${redemption.storeId}`}
-          </p>
+          {storeLoading ? (
+            <div className="mt-1.5 h-3 w-32 animate-pulse rounded bg-muted" />
+          ) : (
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {store?.name ?? `Store #${redemption.storeId}`}
+            </p>
+          )}
         </div>
         <button onClick={close} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground">
           <X className="h-4 w-4" />
@@ -112,9 +118,16 @@ function DrawerContent({ redemption, store, userMap, onClose }: {
         <Row
           icon={StoreIcon}
           label="Store"
-          value={store ? `${store.name}${store.address ? ` — ${store.address}` : ''}` : `Store #${redemption.storeId}`}
+          value={
+            storeLoading
+              ? <div className="h-4 w-40 animate-pulse rounded bg-muted" />
+              : store ? `${store.name}${store.address ? ` — ${store.address}` : ''}` : `Store #${redemption.storeId}`
+          }
         />
         <Row icon={User} label="Customer" value={resolveCustomerName(redemption.customerName, redemption.userId, userMap)} />
+        {resolveCustomerPhone(redemption.userId, userMap) && (
+          <Row icon={Phone} label="Phone" value={<span className="font-mono">{resolveCustomerPhone(redemption.userId, userMap)}</span>} />
+        )}
         <Row icon={Hash} label="Subscription" value={<span className="font-mono">#{redemption.subscriptionId}</span>} />
         <Row icon={Wallet} label="Initiated By" value={<span className="uppercase">{redemption.initiatedBy ?? '—'}</span>} />
         <Row icon={Calendar} label="Requested At" value={formatDateTime(redemption.createdAt)} />

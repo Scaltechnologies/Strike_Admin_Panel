@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import type { AxiosError } from 'axios'
 import { toast } from 'sonner'
 import { paymentsApi } from '../api/payments.api'
+import type { PaymentReversalReason } from '../types/payment.types'
 
 export const PAYMENT_QUERY_KEYS = {
   all: ['payments'] as const,
@@ -29,15 +31,19 @@ export function usePaymentStats() {
   })
 }
 
-export function useRefundPayment() {
+export function useReversePayment() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, reason }: { id: number; reason: string }) => paymentsApi.refund(id, reason),
+    mutationFn: ({ id, reasonCode, note }: { id: number; reasonCode: PaymentReversalReason; note?: string }) =>
+      paymentsApi.reverse(id, reasonCode, note),
     meta: { suppressError: true },
     onSuccess: () => {
-      toast.success('Refund initiated successfully.')
+      toast.success('Payment reversed. Subscription cancelled and commission voided.')
       void qc.invalidateQueries({ queryKey: PAYMENT_QUERY_KEYS.all })
     },
-    onError: () => toast.error('Failed to process refund.'),
+    onError: (error) => {
+      const message = (error as AxiosError<{ message?: string }>).response?.data?.message
+      toast.error(message ?? 'Failed to reverse payment.')
+    },
   })
 }

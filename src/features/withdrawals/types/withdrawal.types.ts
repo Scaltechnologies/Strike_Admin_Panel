@@ -1,12 +1,15 @@
 export type WithdrawalStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+export type WithdrawalMethod = 'BANK_TRANSFER' | 'UPI'
 
 export interface WithdrawalResponse {
   id: number
   vendorId: number
   amount: number
-  bankAccountNumber: string
-  bankAccountName: string
-  ifscCode: string
+  method: WithdrawalMethod
+  bankAccountNumber: string | null
+  bankAccountName: string | null
+  ifscCode: string | null
+  upiId: string | null
   note: string | null
   status: WithdrawalStatus
   adminNote: string | null

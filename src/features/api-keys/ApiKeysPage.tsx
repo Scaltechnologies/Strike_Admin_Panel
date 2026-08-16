@@ -49,7 +49,7 @@ export function ApiKeysPage() {
   const totalElements = data?.totalElements ?? 0
 
   return (
-    <div className="flex h-full flex-col gap-6 p-6">
+    <div className="flex min-h-full flex-col gap-6 p-6">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-semibold text-foreground">API Keys</h1>

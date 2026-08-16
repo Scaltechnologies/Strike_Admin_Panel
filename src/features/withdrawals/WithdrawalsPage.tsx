@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { ArrowDownCircle, Clock, CheckCircle2, XCircle, IndianRupee } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useWithdrawalList, useWithdrawalStats } from './hooks/useWithdrawals'
+import { useWithdrawalList, useWithdrawalStats, useVendorLookup } from './hooks/useWithdrawals'
 import { WithdrawalTable } from './components/WithdrawalTable'
 import { WithdrawalDrawer } from './components/WithdrawalDrawer'
 import type { WithdrawalResponse } from './types/withdrawal.types'
@@ -44,6 +44,7 @@ export function WithdrawalsPage() {
 
   const { data, isLoading, refetch } = useWithdrawalList(page, PAGE_SIZE, statusFilter || undefined)
   const { data: stats, isLoading: statsLoading } = useWithdrawalStats()
+  const vendorMap = useVendorLookup((data?.content ?? []).map((w) => w.vendorId))
 
   const handleCloseDrawer = useCallback(() => setSelected(null), [])
 
@@ -84,6 +85,7 @@ export function WithdrawalsPage() {
       <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
         <WithdrawalTable
           data={data?.content ?? []}
+          vendorMap={vendorMap}
           isLoading={isLoading}
           page={page}
           totalPages={data?.totalPages ?? 0}
@@ -95,7 +97,7 @@ export function WithdrawalsPage() {
         />
       </div>
 
-      <WithdrawalDrawer withdrawal={selected} onClose={handleCloseDrawer} />
+      <WithdrawalDrawer withdrawal={selected} vendorMap={vendorMap} onClose={handleCloseDrawer} />
     </div>
   )
 }

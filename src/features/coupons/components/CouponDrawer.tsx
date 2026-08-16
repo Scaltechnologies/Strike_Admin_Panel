@@ -90,12 +90,20 @@ function DrawerContent({ coupon, onClose }: { coupon: CouponResponse; onClose: (
             <span
               className={cn(
                 'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
-                coupon.isActive
-                  ? 'bg-green-100 text-green-700 dark:bg-green-400/10 dark:text-green-400'
-                  : 'bg-gray-100 text-gray-500 dark:bg-gray-400/10 dark:text-gray-400',
+                coupon.approvalStatus === 'PENDING'
+                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-400/10 dark:text-amber-400'
+                  : coupon.approvalStatus === 'REJECTED'
+                    ? 'bg-red-100 text-red-700 dark:bg-red-400/10 dark:text-red-400'
+                    : coupon.isActive
+                      ? 'bg-green-100 text-green-700 dark:bg-green-400/10 dark:text-green-400'
+                      : 'bg-gray-100 text-gray-500 dark:bg-gray-400/10 dark:text-gray-400',
               )}
             >
-              {coupon.isActive ? 'Active' : 'Inactive'}
+              {coupon.approvalStatus === 'PENDING'
+                ? 'Pending'
+                : coupon.approvalStatus === 'REJECTED'
+                  ? 'Rejected'
+                  : coupon.isActive ? 'Active' : 'Inactive'}
             </span>
           </div>
           <p className="mt-0.5 truncate text-sm text-muted-foreground">{coupon.title}</p>
@@ -173,6 +181,14 @@ function DrawerContent({ coupon, onClose }: { coupon: CouponResponse; onClose: (
               icon={Tag}
               label="Description"
               value={coupon.description}
+            />
+          )}
+
+          {coupon.approvalStatus === 'REJECTED' && coupon.rejectionReason && (
+            <DetailRow
+              icon={XCircle}
+              label="Rejection Reason"
+              value={<span className="text-red-600 dark:text-red-400">{coupon.rejectionReason}</span>}
             />
           )}
 

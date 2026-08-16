@@ -2,7 +2,9 @@ import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tan
 import { ChevronLeft, ChevronRight, RefreshCw, ArrowDownCircle, Eye } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDate } from '@/utils/helpers/date'
+import { resolveVendorName } from '../hooks/useWithdrawals'
 import type { WithdrawalResponse, WithdrawalStatus } from '../types/withdrawal.types'
+import type { VendorRecord } from '@/features/vendors/types/vendor.types'
 
 function statusVariant(s: WithdrawalStatus) {
   if (s === 'APPROVED') return 'bg-green-100 text-green-700 dark:bg-green-400/10 dark:text-green-400'
@@ -12,6 +14,7 @@ function statusVariant(s: WithdrawalStatus) {
 
 interface WithdrawalTableProps {
   data: WithdrawalResponse[]
+  vendorMap: Map<number, VendorRecord>
   isLoading: boolean
   page: number
   totalPages: number
@@ -25,7 +28,7 @@ interface WithdrawalTableProps {
 const SKELETON = 8
 
 export function WithdrawalTable({
-  data, isLoading, page, totalPages, totalElements, pageSize, onPageChange, onRefresh, onView,
+  data, vendorMap, isLoading, page, totalPages, totalElements, pageSize, onPageChange, onRefresh, onView,
 }: WithdrawalTableProps) {
   const columns: ColumnDef<WithdrawalResponse>[] = [
     {
@@ -34,7 +37,9 @@ export function WithdrawalTable({
     },
     {
       id: 'vendor', header: 'Vendor',
-      cell: ({ row }) => <span className="font-mono text-sm text-foreground">Vendor #{row.original.vendorId}</span>,
+      cell: ({ row }) => (
+        <span className="text-sm text-foreground">{resolveVendorName(row.original.vendorId, vendorMap)}</span>
+      ),
     },
     {
       id: 'amount', header: 'Amount',
@@ -45,13 +50,19 @@ export function WithdrawalTable({
       ),
     },
     {
-      id: 'bank', header: 'Bank Details',
-      cell: ({ row }) => (
-        <div className="min-w-0">
-          <p className="truncate text-sm text-foreground">{row.original.bankAccountName}</p>
-          <p className="font-mono text-xs text-muted-foreground">{row.original.ifscCode}</p>
-        </div>
-      ),
+      id: 'bank', header: 'Payout Details',
+      cell: ({ row }) =>
+        row.original.method === 'UPI' ? (
+          <div className="min-w-0">
+            <p className="truncate text-sm text-foreground">UPI</p>
+            <p className="font-mono text-xs text-muted-foreground">{row.original.upiId}</p>
+          </div>
+        ) : (
+          <div className="min-w-0">
+            <p className="truncate text-sm text-foreground">{row.original.bankAccountName}</p>
+            <p className="font-mono text-xs text-muted-foreground">{row.original.ifscCode}</p>
+          </div>
+        ),
     },
     {
       id: 'status', header: 'Status',

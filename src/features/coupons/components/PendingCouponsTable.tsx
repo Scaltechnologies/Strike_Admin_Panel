@@ -1,43 +1,15 @@
+import { useState } from 'react'
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
   type ColumnDef,
 } from '@tanstack/react-table'
-import { ChevronLeft, ChevronRight, RefreshCw, Tag, ToggleLeft, ToggleRight, Eye } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { ChevronLeft, ChevronRight, RefreshCw, Clock, Check, X } from 'lucide-react'
 import { formatDate } from '@/utils/helpers/date'
+import { ConfirmationDialog } from '@/components/common/ConfirmationDialog'
 import type { CouponResponse } from '../types/coupon.types'
-import { useActivateCoupon, useDeactivateCoupon } from '../hooks/useCoupons'
-
-function StatusBadge({ coupon }: { coupon: CouponResponse }) {
-  if (coupon.approvalStatus === 'PENDING') {
-    return (
-      <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-400/10 dark:text-amber-400">
-        Pending
-      </span>
-    )
-  }
-  if (coupon.approvalStatus === 'REJECTED') {
-    return (
-      <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-400/10 dark:text-red-400">
-        Rejected
-      </span>
-    )
-  }
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
-        coupon.isActive
-          ? 'bg-green-100 text-green-700 dark:bg-green-400/10 dark:text-green-400'
-          : 'bg-gray-100 text-gray-500 dark:bg-gray-400/10 dark:text-gray-400',
-      )}
-    >
-      {coupon.isActive ? 'Active' : 'Inactive'}
-    </span>
-  )
-}
+import { useApproveCoupon, useRejectCoupon } from '../hooks/useCoupons'
 
 function DiscountBadge({ type, value }: { type: string; value: number }) {
   const label = type === 'PERCENTAGE' ? `${value}% off` : `₹${value} off`
@@ -48,7 +20,7 @@ function DiscountBadge({ type, value }: { type: string; value: number }) {
   )
 }
 
-interface CouponTableProps {
+interface PendingCouponsTableProps {
   data: CouponResponse[]
   isLoading: boolean
   page: number
@@ -57,12 +29,11 @@ interface CouponTableProps {
   pageSize: number
   onPageChange: (p: number) => void
   onRefresh: () => void
-  onView: (coupon: CouponResponse) => void
 }
 
-const SKELETON_ROWS = 8
+const SKELETON_ROWS = 6
 
-export function CouponTable({
+export function PendingCouponsTable({
   data,
   isLoading,
   page,
@@ -71,15 +42,29 @@ export function CouponTable({
   pageSize,
   onPageChange,
   onRefresh,
-  onView,
-}: CouponTableProps) {
-  const { mutate: activate } = useActivateCoupon()
-  const { mutate: deactivate } = useDeactivateCoupon()
+}: PendingCouponsTableProps) {
+  const { mutate: approve, isPending: approving } = useApproveCoupon()
+  const { mutate: reject, isPending: rejecting } = useRejectCoupon()
+  const [rejectTarget, setRejectTarget] = useState<CouponResponse | null>(null)
+  const [reason, setReason] = useState('')
+
+  function openReject(c: CouponResponse) {
+    setRejectTarget(c)
+    setReason('')
+  }
+
+  function confirmReject() {
+    if (!rejectTarget || !reason.trim()) return
+    reject(
+      { id: rejectTarget.id, reason: reason.trim() },
+      { onSuccess: () => setRejectTarget(null) },
+    )
+  }
 
   const columns: ColumnDef<CouponResponse>[] = [
     {
-      id: 'code',
-      header: 'Code / Title',
+      id: 'title',
+      header: 'Requested Coupon',
       cell: ({ row }) => (
         <div className="min-w-0">
           <p className="font-mono text-sm font-semibold text-foreground">{row.original.code}</p>
@@ -99,13 +84,13 @@ export function CouponTable({
       header: 'Vendor',
       cell: ({ row }) => (
         <span className="font-mono text-sm text-muted-foreground">
-          {row.original.vendorId ? `#${row.original.vendorId}` : 'All'}
+          {row.original.vendorId ? `#${row.original.vendorId}` : '—'}
         </span>
       ),
     },
     {
       id: 'validity',
-      header: 'Validity',
+      header: 'Requested Validity',
       cell: ({ row }) => (
         <div className="text-xs text-muted-foreground">
           <p>{formatDate(row.original.validFrom)}</p>
@@ -114,19 +99,11 @@ export function CouponTable({
       ),
     },
     {
-      id: 'usage',
-      header: 'Used',
+      id: 'requestedAt',
+      header: 'Requested',
       cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">
-          {row.original.usedCount}
-          {row.original.maxUses ? ` / ${row.original.maxUses}` : ''}
-        </span>
+        <span className="text-xs text-muted-foreground">{formatDate(row.original.createdAt)}</span>
       ),
-    },
-    {
-      id: 'status',
-      header: 'Status',
-      cell: ({ row }) => <StatusBadge coupon={row.original} />,
     },
     {
       id: 'actions',
@@ -134,32 +111,22 @@ export function CouponTable({
       cell: ({ row }) => {
         const c = row.original
         return (
-          <div className="flex items-center justify-end gap-1">
+          <div className="flex items-center justify-end gap-2">
             <button
-              onClick={(e) => { e.stopPropagation(); onView(c) }}
-              title="View details"
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              onClick={() => approve(c.id)}
+              disabled={approving || rejecting}
+              className="flex items-center gap-1 rounded-lg bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700 transition-colors hover:bg-green-100 disabled:opacity-60 dark:bg-green-400/10 dark:text-green-400 dark:hover:bg-green-400/20"
             >
-              <Eye className="h-3.5 w-3.5" />
+              <Check className="h-3.5 w-3.5" />
+              Approve
             </button>
             <button
-              onClick={(e) => {
-                e.stopPropagation()
-                c.isActive ? deactivate(c.id) : activate(c.id)
-              }}
-              title={c.isActive ? 'Deactivate' : 'Activate'}
-              className={cn(
-                'flex h-7 w-7 items-center justify-center rounded-lg transition-colors',
-                c.isActive
-                  ? 'text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-400/10'
-                  : 'text-green-600 hover:bg-green-50 dark:hover:bg-green-400/10',
-              )}
+              onClick={() => openReject(c)}
+              disabled={approving || rejecting}
+              className="flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100 disabled:opacity-60 dark:bg-red-400/10 dark:text-red-400 dark:hover:bg-red-400/20"
             >
-              {c.isActive ? (
-                <ToggleRight className="h-3.5 w-3.5" />
-              ) : (
-                <ToggleLeft className="h-3.5 w-3.5" />
-              )}
+              <X className="h-3.5 w-3.5" />
+              Reject
             </button>
           </div>
         )
@@ -181,7 +148,6 @@ export function CouponTable({
 
   return (
     <div className="flex flex-col">
-      {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -211,17 +177,13 @@ export function CouponTable({
                 ? (
                   <tr>
                     <td colSpan={columns.length} className="py-16 text-center">
-                      <Tag className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
-                      <p className="text-sm text-muted-foreground">No coupons found</p>
+                      <Clock className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
+                      <p className="text-sm text-muted-foreground">No pending coupon requests</p>
                     </td>
                   </tr>
                 )
                 : table.getRowModel().rows.map((row) => (
-                  <tr
-                    key={row.id}
-                    onClick={() => onView(row.original)}
-                    className="cursor-pointer transition-colors hover:bg-muted/30"
-                  >
+                  <tr key={row.id} className="transition-colors hover:bg-muted/30">
                     {row.getVisibleCells().map((cell) => (
                       <td key={cell.id} className="px-4 py-3">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -233,7 +195,6 @@ export function CouponTable({
         </table>
       </div>
 
-      {/* Pagination */}
       <div className="flex items-center justify-between border-t border-border px-4 py-3">
         <p className="text-xs text-muted-foreground">
           {totalElements === 0 ? 'No results' : `${start}–${end} of ${totalElements.toLocaleString()}`}
@@ -265,6 +226,25 @@ export function CouponTable({
           </button>
         </div>
       </div>
+
+      <ConfirmationDialog
+        open={rejectTarget !== null}
+        title="Reject coupon request"
+        description={rejectTarget ? `Reject "${rejectTarget.title}" (${rejectTarget.code}) requested by vendor #${rejectTarget.vendorId ?? '—'}? The vendor will be notified with your reason.` : ''}
+        onConfirm={confirmReject}
+        onCancel={() => setRejectTarget(null)}
+        confirmLabel="Reject"
+        variant="destructive"
+        isLoading={rejecting}
+      >
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Reason for rejection (shown to the vendor)…"
+          rows={3}
+          className="block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+      </ConfirmationDialog>
     </div>
   )
 }

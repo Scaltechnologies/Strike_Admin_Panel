@@ -2,6 +2,8 @@ import { useState, useCallback } from 'react'
 import { Banknote, CheckCircle2, XCircle, RotateCcw, IndianRupee } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { usePaymentList, usePaymentStats } from './hooks/usePayments'
+import { useUserLookup } from '@/features/redemptions/hooks/useRedemptions'
+import { useVendorLookup } from '@/features/withdrawals/hooks/useWithdrawals'
 import { PaymentTable } from './components/PaymentTable'
 import { PaymentDrawer } from './components/PaymentDrawer'
 import type { PaymentResponse } from './types/payment.types'
@@ -45,6 +47,8 @@ export function PaymentsPage() {
 
   const { data, isLoading, refetch } = usePaymentList(page, PAGE_SIZE, statusFilter || undefined)
   const { data: stats, isLoading: statsLoading } = usePaymentStats()
+  const userMap = useUserLookup((data?.content ?? []).map((p) => p.userId))
+  const vendorMap = useVendorLookup((data?.content ?? []).map((p) => p.vendorId))
 
   const handleClose = useCallback(() => setSelected(null), [])
 
@@ -83,6 +87,7 @@ export function PaymentsPage() {
       <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
         <PaymentTable
           data={data?.content ?? []}
+          userMap={userMap}
           isLoading={isLoading}
           page={page}
           totalPages={data?.totalPages ?? 0}
@@ -94,7 +99,7 @@ export function PaymentsPage() {
         />
       </div>
 
-      <PaymentDrawer payment={selected} onClose={handleClose} />
+      <PaymentDrawer payment={selected} userMap={userMap} vendorMap={vendorMap} onClose={handleClose} />
     </div>
   )
 }

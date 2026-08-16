@@ -1,5 +1,7 @@
 export type DiscountType = 'PERCENTAGE' | 'FLAT'
 
+export type CouponApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+
 export interface CouponResponse {
   id: number
   code: string
@@ -15,6 +17,8 @@ export interface CouponResponse {
   validFrom: string
   validUntil: string
   isActive: boolean
+  approvalStatus: CouponApprovalStatus
+  rejectionReason: string | null
   createdAt: string
   updatedAt: string
 }

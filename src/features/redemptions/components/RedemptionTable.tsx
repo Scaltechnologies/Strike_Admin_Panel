@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, RefreshCw, Receipt, Eye, Store as StoreIcon 
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { cn } from '@/lib/utils'
 import { formatRelative, formatDateTime } from '@/utils/helpers/date'
-import { resolveCustomerName } from '../hooks/useRedemptions'
+import { resolveCustomerName, resolveCustomerPhone } from '../hooks/useRedemptions'
 import type { RedemptionRecord, RedemptionStatus } from '../types/redemption.types'
 import type { StoreRecord } from '@/features/stores/types/store.types'
 import type { UserDetails } from '@/features/users/types/user.types'
@@ -39,13 +39,14 @@ interface RedemptionTableProps {
   onRefresh: () => void
   onView: (r: RedemptionRecord) => void
   storeMap: Map<number, StoreRecord>
+  storeLoading: Set<number>
   userMap: Map<number, UserDetails>
 }
 
 const SKELETON = 8
 
 export function RedemptionTable({
-  data, isLoading, page, totalPages, totalElements, pageSize, onPageChange, onRefresh, onView, storeMap, userMap,
+  data, isLoading, page, totalPages, totalElements, pageSize, onPageChange, onRefresh, onView, storeMap, storeLoading, userMap,
 }: RedemptionTableProps) {
   const seenIds = useRef<Set<number>>(new Set())
   const [freshIds, setFreshIds] = useState<Set<number>>(new Set())
@@ -83,23 +84,34 @@ export function RedemptionTable({
       id: 'store', header: 'Store',
       cell: ({ row }) => {
         const store = storeMap.get(row.original.storeId)
+        const isLoading = storeLoading.has(row.original.storeId)
         return (
           <div className="flex items-center gap-1.5 min-w-0">
             <StoreIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-            <span className="truncate text-sm text-foreground">
-              {store?.name ?? `Store #${row.original.storeId}`}
-            </span>
+            {isLoading ? (
+              <div className="h-3.5 w-28 animate-pulse rounded bg-muted" />
+            ) : (
+              <span className="truncate text-sm text-foreground">
+                {store?.name ?? `Store #${row.original.storeId}`}
+              </span>
+            )}
           </div>
         )
       },
     },
     {
       id: 'customer', header: 'Customer',
-      cell: ({ row }) => (
-        <span className="text-sm text-foreground">
-          {resolveCustomerName(row.original.customerName, row.original.userId, userMap)}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const phone = resolveCustomerPhone(row.original.userId, userMap)
+        return (
+          <div className="min-w-0">
+            <p className="truncate text-sm text-foreground">
+              {resolveCustomerName(row.original.customerName, row.original.userId, userMap)}
+            </p>
+            {phone && <p className="font-mono text-xs text-muted-foreground">{phone}</p>}
+          </div>
+        )
+      },
     },
     {
       id: 'amount', header: 'Amount',

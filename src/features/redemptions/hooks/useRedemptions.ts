@@ -63,11 +63,15 @@ export function useStoreLookup(storeIds: number[]) {
   })
 
   const map = new Map<number, StoreRecord>()
+  // Tracks ids whose lookup is still in flight, so callers can show a loading state
+  // instead of flashing the raw "Store #<id>" fallback before the name arrives.
+  const loading = new Set<number>()
   uniqueIds.forEach((id, i) => {
-    const data = results[i]?.data
-    if (data) map.set(id, data)
+    const result = results[i]
+    if (result?.data) map.set(id, result.data)
+    else if (result?.isLoading) loading.add(id)
   })
-  return map
+  return { map, loading }
 }
 
 // Resolves userId -> UserDetails for the rows currently on screen. Falls back to this when the
@@ -94,12 +98,22 @@ export function useUserLookup(userIds: number[]) {
   return map
 }
 
+// redemption-service stamps "Customer #<id>" onto customerName as its own last-resort fallback
+// when it can't resolve a name or masked mobile — treat that as absent, not a real name, so we
+// fall through to our own (more complete) user lookup instead of surfacing a bare ID.
+const STAMPED_PLACEHOLDER_NAME = /^Customer #\d+$/
+
 export function resolveCustomerName(
   customerName: string | null,
   userId: number,
   userMap: Map<number, UserDetails>,
 ): string {
-  if (customerName) return customerName
+  if (customerName && !STAMPED_PLACEHOLDER_NAME.test(customerName)) return customerName
   const user = userMap.get(userId)
-  return user?.profile?.name || user?.auth?.mobileNumber || `User #${userId}`
+  return user?.profile?.name || user?.auth?.mobileNumber || 'Strike User'
+}
+
+export function resolveCustomerPhone(userId: number, userMap: Map<number, UserDetails>): string | null {
+  const user = userMap.get(userId)
+  return user?.profile?.mobileNumber || user?.auth?.mobileNumber || null
 }

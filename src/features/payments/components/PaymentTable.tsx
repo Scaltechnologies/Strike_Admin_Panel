@@ -2,7 +2,9 @@ import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tan
 import { ChevronLeft, ChevronRight, RefreshCw, Banknote, Eye } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDate } from '@/utils/helpers/date'
+import { resolveCustomerName } from '@/features/redemptions/hooks/useRedemptions'
 import type { PaymentResponse, PaymentStatus } from '../types/payment.types'
+import type { UserDetails } from '@/features/users/types/user.types'
 
 function statusVariant(s: PaymentStatus) {
   if (s === 'COMPLETED') return 'bg-green-100 text-green-700 dark:bg-green-400/10 dark:text-green-400'
@@ -13,6 +15,7 @@ function statusVariant(s: PaymentStatus) {
 
 interface PaymentTableProps {
   data: PaymentResponse[]
+  userMap: Map<number, UserDetails>
   isLoading: boolean
   page: number
   totalPages: number
@@ -26,7 +29,7 @@ interface PaymentTableProps {
 const SKELETON = 8
 
 export function PaymentTable({
-  data, isLoading, page, totalPages, totalElements, pageSize, onPageChange, onRefresh, onView,
+  data, userMap, isLoading, page, totalPages, totalElements, pageSize, onPageChange, onRefresh, onView,
 }: PaymentTableProps) {
   const columns: ColumnDef<PaymentResponse>[] = [
     {
@@ -35,21 +38,14 @@ export function PaymentTable({
     },
     {
       id: 'user', header: 'User',
-      cell: ({ row }) => <span className="font-mono text-sm">User #{row.original.userId}</span>,
+      cell: ({ row }) => <span className="text-sm text-foreground">{resolveCustomerName(null, row.original.userId, userMap)}</span>,
     },
     {
       id: 'amount', header: 'Amount',
       cell: ({ row }) => (
-        <div>
-          <p className="text-sm font-semibold text-foreground">
-            ₹{Number(row.original.amountPaid).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-          </p>
-          {row.original.refundAmount && (
-            <p className="text-xs text-violet-600 dark:text-violet-400">
-              Refund: ₹{Number(row.original.refundAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-            </p>
-          )}
-        </div>
+        <p className="text-sm font-semibold text-foreground">
+          ₹{Number(row.original.amountPaid).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+        </p>
       ),
     },
     {
