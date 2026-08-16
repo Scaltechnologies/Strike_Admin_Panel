@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 import { formatDateTime } from '@/utils/helpers/date'
 import { useApiKeyList, useApiKeyStats, useRevokeApiKey, useDeleteApiKey } from './hooks/useApiKeys'
 import { CreateApiKeyModal } from './components/CreateApiKeyModal'
+import { PaymentGatewaySection } from '@/features/payment-gateway/components/PaymentGatewaySection'
 import type { ApiKeyResponse, ApiKeyStatus } from './types/api-key.types'
 
 const PAGE_SIZE = 20
@@ -52,7 +53,7 @@ export function ApiKeysPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-semibold text-foreground">API Keys</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">Manage programmatic access to the platform</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">Payment gateway credentials and programmatic access to the platform</p>
         </div>
         <button onClick={openCreate}
           className="flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
@@ -60,6 +61,8 @@ export function ApiKeysPage() {
           New API Key
         </button>
       </div>
+
+      <PaymentGatewaySection />
 
       <div className="grid grid-cols-4 gap-3">
         <StatCard label="Total" value={stats?.totalKeys} color="bg-blue-500" isLoading={statsLoading} />
@@ -70,7 +73,7 @@ export function ApiKeysPage() {
 
       <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <p className="text-sm font-medium text-foreground">All Keys</p>
+          <p className="text-sm font-medium text-foreground">Platform API Keys</p>
           <button onClick={() => void refetch()} className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground">
             <RefreshCw className="h-3.5 w-3.5" />
           </button>

@@ -167,6 +167,9 @@ export const ENDPOINTS = {
     REVOKE: (id: string) => `/api/admin/api-keys/${id}/revoke`,
     ACTIVATE: (id: string) => `/api/admin/api-keys/${id}/activate`,
   },
+  PAYMENT_GATEWAY: {
+    BY_PROVIDER: (provider: string) => `/api/admin/payment-gateway/${provider}`,
+  },
   COMMISSION: {
     BASE: '/api/admin/commissions',
     BY_VENDOR: (id: string) => `/api/admin/commissions/vendor/${id}`,
