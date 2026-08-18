@@ -4,9 +4,9 @@ export interface BannerResponse {
   imageUrl: string
   linkUrl: string | null
   description: string | null
-  active: boolean
-  startDate: string | null
-  endDate: string | null
+  isActive: boolean
+  validFrom: string | null
+  validUntil: string | null
   displayOrder: number
   createdAt: string
   updatedAt: string
@@ -22,9 +22,9 @@ export interface BannerPage {
 }
 
 export interface BannerStats {
-  totalBanners?: number
-  activeBanners?: number
-  inactiveBanners?: number
+  total?: number
+  active?: number
+  inactive?: number
   [key: string]: unknown
 }
 
@@ -33,8 +33,8 @@ export interface CreateBannerRequest {
   imageUrl: string
   linkUrl?: string
   description?: string
-  startDate?: string
-  endDate?: string
+  validFrom?: string
+  validUntil?: string
   displayOrder?: number
 }
 

@@ -33,8 +33,8 @@ export function BannerForm({ open, onClose, editing }: BannerFormProps) {
   const [form, setForm] = useState<FormState>({
     title: editing?.title ?? '',
     description: editing?.description ?? '',
-    startDate: editing?.startDate ?? '',
-    endDate: editing?.endDate ?? '',
+    validFrom: editing?.validFrom ?? '',
+    validUntil: editing?.validUntil ?? '',
     displayOrder: editing?.displayOrder ?? 0,
   })
 
@@ -98,8 +98,8 @@ export function BannerForm({ open, onClose, editing }: BannerFormProps) {
       ...form,
       imageUrl,
       description: form.description || undefined,
-      startDate: form.startDate || undefined,
-      endDate: form.endDate || undefined,
+      validFrom: form.validFrom || undefined,
+      validUntil: form.validUntil || undefined,
     }
     if (isEdit) {
       update({ id: editing!.id, payload }, { onSuccess: onClose })
@@ -150,10 +150,10 @@ export function BannerForm({ open, onClose, editing }: BannerFormProps) {
                 </Field>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Start Date">
-                    <input type="date" className={inputCls} value={form.startDate ?? ''} onChange={(e) => set('startDate', e.target.value)} disabled={isPending} />
+                    <input type="date" className={inputCls} value={form.validFrom ?? ''} onChange={(e) => set('validFrom', e.target.value)} disabled={isPending} />
                   </Field>
                   <Field label="End Date">
-                    <input type="date" className={inputCls} value={form.endDate ?? ''} onChange={(e) => set('endDate', e.target.value)} disabled={isPending} />
+                    <input type="date" className={inputCls} value={form.validUntil ?? ''} onChange={(e) => set('validUntil', e.target.value)} disabled={isPending} />
                   </Field>
                 </div>
                 <Field label="Display Order">

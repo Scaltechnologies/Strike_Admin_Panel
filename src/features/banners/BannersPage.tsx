@@ -56,9 +56,9 @@ export function BannersPage() {
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <StatCard label="Total" value={stats?.totalBanners} color="bg-blue-500" isLoading={statsLoading} />
-        <StatCard label="Active" value={stats?.activeBanners} color="bg-green-500" isLoading={statsLoading} />
-        <StatCard label="Inactive" value={stats?.inactiveBanners} color="bg-muted-foreground" isLoading={statsLoading} />
+        <StatCard label="Total" value={stats?.total} color="bg-blue-500" isLoading={statsLoading} />
+        <StatCard label="Active" value={stats?.active} color="bg-green-500" isLoading={statsLoading} />
+        <StatCard label="Inactive" value={stats?.inactive} color="bg-muted-foreground" isLoading={statsLoading} />
       </div>
 
       {isLoading ? (
@@ -88,7 +88,7 @@ export function BannersPage() {
               key={banner.id}
               banner={banner}
               onEdit={openEdit}
-              onToggle={(b) => toggle({ id: b.id, active: b.active })}
+              onToggle={(b) => toggle({ id: b.id, active: b.isActive })}
               onDelete={(b) => setDeleteConfirm(b.id)}
               isToggling={toggling}
             />
@@ -141,11 +141,11 @@ function BannerCard({ banner, onEdit, onToggle, onDelete, isToggling }: {
         )}
         <div className={cn(
           'absolute right-2 top-2 rounded-full px-2 py-0.5 text-xs font-medium',
-          banner.active
+          banner.isActive
             ? 'bg-green-500 text-white'
             : 'bg-muted text-muted-foreground',
         )}>
-          {banner.active ? 'Active' : 'Inactive'}
+          {banner.isActive ? 'Active' : 'Inactive'}
         </div>
         {banner.displayOrder > 0 && (
           <div className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-medium text-white">
@@ -156,18 +156,18 @@ function BannerCard({ banner, onEdit, onToggle, onDelete, isToggling }: {
       <div className="flex flex-1 flex-col p-4">
         <p className="font-medium text-foreground">{banner.title}</p>
         {banner.description && <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{banner.description}</p>}
-        {(banner.startDate || banner.endDate) && (
+        {(banner.validFrom || banner.validUntil) && (
           <p className="mt-1.5 text-xs text-muted-foreground">
-            {banner.startDate && formatDate(banner.startDate)}
-            {banner.startDate && banner.endDate && ' – '}
-            {banner.endDate && formatDate(banner.endDate)}
+            {banner.validFrom && formatDate(banner.validFrom)}
+            {banner.validFrom && banner.validUntil && ' – '}
+            {banner.validUntil && formatDate(banner.validUntil)}
           </p>
         )}
         <div className="mt-3 flex items-center gap-2">
           <button onClick={() => onToggle(banner)} disabled={isToggling}
             className="flex items-center gap-1 rounded-lg border border-border px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-60">
-            {banner.active ? <ToggleRight className="h-3.5 w-3.5 text-green-500" /> : <ToggleLeft className="h-3.5 w-3.5" />}
-            {banner.active ? 'Deactivate' : 'Activate'}
+            {banner.isActive ? <ToggleRight className="h-3.5 w-3.5 text-green-500" /> : <ToggleLeft className="h-3.5 w-3.5" />}
+            {banner.isActive ? 'Deactivate' : 'Activate'}
           </button>
           <button onClick={() => onEdit(banner)}
             className="flex items-center gap-1 rounded-lg border border-border px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
