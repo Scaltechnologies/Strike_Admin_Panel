@@ -1,8 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X } from 'lucide-react'
-import { useCreateBanner, useUpdateBanner } from '../hooks/useBanners'
+import { FileUploadField } from '@/components/forms/FileUploadField'
+import { useCreateBanner, useUpdateBanner, useUploadBannerImage } from '../hooks/useBanners'
 import type { BannerResponse, CreateBannerRequest } from '../types/banner.types'
+
+const MAX_FILE_BYTES = 5 * 1024 * 1024
 
 interface BannerFormProps {
   open: boolean
@@ -23,31 +26,77 @@ function Field({ label, required, children }: { label: string; required?: boolea
 
 const inputCls = 'block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60'
 
+type FormState = Omit<CreateBannerRequest, 'imageUrl' | 'linkUrl'>
+
 export function BannerForm({ open, onClose, editing }: BannerFormProps) {
   const isEdit = !!editing
-  const [form, setForm] = useState<CreateBannerRequest>({
+  const [form, setForm] = useState<FormState>({
     title: editing?.title ?? '',
-    imageUrl: editing?.imageUrl ?? '',
-    linkUrl: editing?.linkUrl ?? '',
     description: editing?.description ?? '',
     startDate: editing?.startDate ?? '',
     endDate: editing?.endDate ?? '',
     displayOrder: editing?.displayOrder ?? 0,
   })
 
+  const [file, setFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(editing?.imageUrl ?? null)
+  const [fileError, setFileError] = useState<string | null>(null)
+  const objectUrlRef = useRef<string | null>(null)
+
+  // Revoke whatever object URL is live when the form unmounts.
+  useEffect(() => () => {
+    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
+  }, [])
+
+  const { mutateAsync: uploadImage, isPending: uploading } = useUploadBannerImage()
   const { mutate: create, isPending: creating } = useCreateBanner()
   const { mutate: update, isPending: updating } = useUpdateBanner()
-  const isPending = creating || updating
+  const isPending = uploading || creating || updating
 
-  function set(k: keyof CreateBannerRequest, v: string | number) {
+  function set(k: keyof FormState, v: string | number) {
     setForm((p) => ({ ...p, [k]: v }))
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const picked = e.target.files?.[0] ?? null
+    e.target.value = '' // allow re-picking the same file after an error
+    if (!picked) return
+    if (!picked.type.startsWith('image/')) {
+      setFileError('Please choose an image file.')
+      return
+    }
+    if (picked.size > MAX_FILE_BYTES) {
+      setFileError('Image must be under 5MB.')
+      return
+    }
+    setFileError(null)
+    setFile(picked)
+    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
+    const url = URL.createObjectURL(picked)
+    objectUrlRef.current = url
+    setPreviewUrl(url)
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const payload = {
+    if (!isEdit && !file) {
+      setFileError('Please choose an image to upload.')
+      return
+    }
+
+    let imageUrl = editing?.imageUrl
+    if (file) {
+      try {
+        imageUrl = await uploadImage(file)
+      } catch {
+        return // useUploadBannerImage's onError already surfaced a toast
+      }
+    }
+    if (!imageUrl) return
+
+    const payload: CreateBannerRequest = {
       ...form,
-      linkUrl: form.linkUrl || undefined,
+      imageUrl,
       description: form.description || undefined,
       startDate: form.startDate || undefined,
       endDate: form.endDate || undefined,
@@ -81,17 +130,21 @@ export function BannerForm({ open, onClose, editing }: BannerFormProps) {
                 <Field label="Title" required>
                   <input className={inputCls} value={form.title} onChange={(e) => set('title', e.target.value)} placeholder="Summer Sale 2025" required disabled={isPending} />
                 </Field>
-                <Field label="Image URL" required>
-                  <input className={inputCls} value={form.imageUrl} onChange={(e) => set('imageUrl', e.target.value)} placeholder="https://…/banner.jpg" required disabled={isPending} />
+                <Field label="Banner Image" required={!isEdit}>
+                  <FileUploadField
+                    dragAndDrop
+                    accept="image/*"
+                    helperText="PNG or JPG, up to 5MB"
+                    error={fileError ?? undefined}
+                    onChange={handleFileChange}
+                    disabled={isPending}
+                  />
                 </Field>
-                {form.imageUrl && (
+                {previewUrl && (
                   <div className="overflow-hidden rounded-lg border border-border">
-                    <img src={form.imageUrl} alt="Preview" className="h-32 w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                    <img src={previewUrl} alt="Preview" className="h-32 w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
                   </div>
                 )}
-                <Field label="Link URL">
-                  <input className={inputCls} value={form.linkUrl ?? ''} onChange={(e) => set('linkUrl', e.target.value)} placeholder="https://…" disabled={isPending} />
-                </Field>
                 <Field label="Description">
                   <textarea rows={2} className={inputCls + ' resize-none'} value={form.description ?? ''} onChange={(e) => set('description', e.target.value)} placeholder="Short description…" disabled={isPending} />
                 </Field>
@@ -115,7 +168,7 @@ export function BannerForm({ open, onClose, editing }: BannerFormProps) {
                 </button>
                 <button type="submit" disabled={isPending}
                   className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60">
-                  {isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Banner'}
+                  {uploading ? 'Uploading…' : isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Banner'}
                 </button>
               </div>
             </form>

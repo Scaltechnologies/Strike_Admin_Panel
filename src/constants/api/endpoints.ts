@@ -108,6 +108,13 @@ export const ENDPOINTS = {
     STATS: '/api/admin/banners/stats',
     ACTIVATE: (id: string) => `/api/admin/banners/${id}/activate`,
     DEACTIVATE: (id: string) => `/api/admin/banners/${id}/deactivate`,
+    // PROVISIONAL — no upload endpoint exists yet for this feature (confirmed:
+    // the only working file-upload contract anywhere in the codebase is the
+    // vendor app's unrelated POST /api/vendor/stores/my/banner). This path +
+    // the { imageUrl } response shape are a guess modeled on that endpoint's
+    // multipart/form-data convention (field name "file"). Confirm with
+    // backend and update once the real contract exists.
+    UPLOAD: '/api/admin/banners/upload',
   },
   NOTIFICATIONS: {
     BASE: '/api/admin/notifications',

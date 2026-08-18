@@ -30,6 +30,14 @@ export function useBannerStats() {
   })
 }
 
+export function useUploadBannerImage() {
+  return useMutation({
+    mutationFn: (file: File) => bannersApi.uploadImage(file),
+    meta: { suppressError: true },
+    onError: () => toast.error('Failed to upload image.'),
+  })
+}
+
 export function useCreateBanner() {
   const qc = useQueryClient()
   return useMutation({
