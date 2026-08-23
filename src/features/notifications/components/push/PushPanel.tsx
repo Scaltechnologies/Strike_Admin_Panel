@@ -7,7 +7,6 @@ import { useNotificationList } from '../../hooks/useNotifications'
 import { usePushDeviceList, usePushDeviceStats, useRevokePushDevice } from '../../hooks/usePushNotifications'
 import { NotificationLogTable } from '../NotificationLogTable'
 import { NotificationStatCard } from '../NotificationStatCard'
-import { PendingBackendNotice } from '../PendingBackendNotice'
 import { PushDeviceTable } from './PushDeviceTable'
 import { SendPushModal } from './SendPushModal'
 import type { PushDevice } from '../../types/notification.types'
@@ -39,7 +38,6 @@ export function PushPanel() {
 
   return (
     <div className="flex flex-col gap-4">
-      <PendingBackendNotice reason="notification-service has no push channel (FCM/APNs) or device registry yet." />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">

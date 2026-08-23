@@ -4,7 +4,6 @@ import { usePermission } from '@/core/permissions/permissions'
 import { PERMISSIONS } from '@/constants/permissions'
 import { DeleteConfirmation } from '@/components/common/DeleteConfirmation'
 import { useTemplateList, useDeleteTemplate, useToggleTemplate } from '../../hooks/useTemplates'
-import { PendingBackendNotice } from '../PendingBackendNotice'
 import { TemplateTable } from './TemplateTable'
 import { TemplateFormModal } from './TemplateFormModal'
 import type { NotificationTemplate } from '../../types/notification.types'
@@ -34,8 +33,6 @@ export function TemplatesPanel() {
 
   return (
     <div className="flex flex-col gap-4">
-      <PendingBackendNotice reason="no template entity or controller exists in notification-service yet — messages are freeform text passed at send time." />
-
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           Reusable message bodies for system-triggered and admin-composed sends across all channels.

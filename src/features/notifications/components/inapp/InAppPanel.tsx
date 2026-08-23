@@ -4,7 +4,6 @@ import { usePermission } from '@/core/permissions/permissions'
 import { PERMISSIONS } from '@/constants/permissions'
 import { useInAppList, useInAppStats, useRemoveInAppNotification } from '../../hooks/useInAppNotifications'
 import { NotificationStatCard } from '../NotificationStatCard'
-import { PendingBackendNotice } from '../PendingBackendNotice'
 import { InAppInboxTable } from './InAppInboxTable'
 import { SendInAppModal } from './SendInAppModal'
 import type { InAppNotification } from '../../types/notification.types'
@@ -22,8 +21,6 @@ export function InAppPanel() {
 
   return (
     <div className="flex flex-col gap-4">
-      <PendingBackendNotice reason="the NotificationLog entity has no in-app storage or read-state fields, and no in-app controller exists in notification-service yet." />
-
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <NotificationStatCard
