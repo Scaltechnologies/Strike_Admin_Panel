@@ -29,15 +29,23 @@ export function BannersPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<BannerResponse | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
+  // Bumped on every "New Banner" click so BannerForm remounts fresh each time — otherwise, since
+  // it's always mounted (only its rendered content is conditional, so the close animation can
+  // play), its internal state from whichever banner was last created/edited would silently carry
+  // over into the next create, making it look like only one banner could ever be added.
+  const [createNonce, setCreateNonce] = useState(0)
 
   const { data, isLoading } = useBannerList(page, PAGE_SIZE)
   const { data: stats, isLoading: statsLoading } = useBannerStats()
   const { mutate: toggle, isPending: toggling } = useToggleBanner()
   const { mutate: deleteBanner, isPending: deleting } = useDeleteBanner()
 
-  const openCreate = useCallback(() => { setEditing(null); setFormOpen(true) }, [])
+  const openCreate = useCallback(() => { setEditing(null); setCreateNonce((n) => n + 1); setFormOpen(true) }, [])
   const openEdit = useCallback((b: BannerResponse) => { setEditing(b); setFormOpen(true) }, [])
-  const closeForm = useCallback(() => { setFormOpen(false); setEditing(null) }, [])
+  // Leaves `editing` as-is (rather than nulling it here) so the BannerForm `key` below stays
+  // stable through the close/exit animation — openCreate/openEdit already set it fresh before
+  // the form opens again next time.
+  const closeForm = useCallback(() => setFormOpen(false), [])
 
   const banners = data?.content ?? []
 
@@ -96,7 +104,12 @@ export function BannersPage() {
         </div>
       )}
 
-      <BannerForm open={formOpen} onClose={closeForm} editing={editing} />
+      <BannerForm
+        key={editing ? `edit-${editing.id}` : `create-${createNonce}`}
+        open={formOpen}
+        onClose={closeForm}
+        editing={editing}
+      />
 
       {deleteConfirm !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
