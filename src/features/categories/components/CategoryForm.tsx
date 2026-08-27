@@ -28,12 +28,14 @@ function Field({ label, required, children }: { label: string; required?: boolea
 
 const inputCls = 'block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60'
 
-type FormState = Omit<CreateCategoryRequest, 'imageUrl' | 'displayOrder'>
+type FormState = Omit<CreateCategoryRequest, 'imageUrl'>
 
-// The admin no longer types a display order — it's auto-assigned as
-// "next available" so the create form can never collide with an existing
-// category's order (see the 409 this used to cause). Editing preserves
-// whatever order the category already has; reordering isn't done here.
+// Display order defaults to "next available" (max existing + 1) so the
+// common case — adding a category to the end — needs no thought from the
+// admin. It's still a plain editable field below: the admin can type over
+// this default to place the category anywhere, including a number that
+// collides with an existing one (the backend is the source of truth on
+// whether that's allowed).
 function nextDisplayOrder(categories: CategoryResponse[]): number {
   if (categories.length === 0) return 1
   return Math.max(...categories.map((c) => c.displayOrder ?? 0)) + 1
@@ -44,6 +46,7 @@ export function CategoryForm({ open, onClose, editing, categories }: CategoryFor
   const [form, setForm] = useState<FormState>({
     name: editing?.name ?? '',
     description: editing?.description ?? '',
+    displayOrder: editing?.displayOrder ?? nextDisplayOrder(categories),
   })
 
   const [file, setFile] = useState<File | null>(null)
@@ -60,7 +63,7 @@ export function CategoryForm({ open, onClose, editing, categories }: CategoryFor
   const { mutate: update, isPending: updating } = useUpdateCategory()
   const isPending = uploading || creating || updating
 
-  function set(k: keyof FormState, v: string) {
+  function set(k: keyof FormState, v: string | number) {
     setForm((p) => ({ ...p, [k]: v }))
   }
 
@@ -100,7 +103,6 @@ export function CategoryForm({ open, onClose, editing, categories }: CategoryFor
       ...form,
       imageUrl,
       description: form.description || undefined,
-      displayOrder: isEdit ? editing!.displayOrder ?? 0 : nextDisplayOrder(categories),
     }
     if (isEdit) {
       update({ id: editing!.id, payload }, { onSuccess: onClose })
@@ -148,6 +150,9 @@ export function CategoryForm({ open, onClose, editing, categories }: CategoryFor
                 )}
                 <Field label="Description">
                   <textarea rows={2} className={inputCls + ' resize-none'} value={form.description ?? ''} onChange={(e) => set('description', e.target.value)} placeholder="Short description…" disabled={isPending} />
+                </Field>
+                <Field label="Display Order">
+                  <input type="number" min={0} className={inputCls} value={form.displayOrder ?? 0} onChange={(e) => set('displayOrder', Number(e.target.value))} disabled={isPending} />
                 </Field>
               </div>
 
