@@ -34,7 +34,7 @@ export function useUploadBannerImage() {
   return useMutation({
     mutationFn: (file: File) => bannersApi.uploadImage(file),
     meta: { suppressError: true },
-    onError: () => toast.error('Failed to upload image.'),
+    onError: (err) => toast.error(err instanceof Error ? err.message : 'Failed to upload image.'),
   })
 }
 

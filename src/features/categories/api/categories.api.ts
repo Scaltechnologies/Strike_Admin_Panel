@@ -20,6 +20,9 @@ export const categoriesApi = {
     })
 
     if (!res.ok) {
+      if (res.status === 413) {
+        throw new Error('That image is too large for the server to accept — please choose a smaller file.')
+      }
       throw new Error(`Failed to upload category image (${res.status})`)
     }
 

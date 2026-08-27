@@ -17,7 +17,8 @@ export function useCategoryList() {
 export function useUploadCategoryImage() {
   return useMutation({
     mutationFn: (file: File) => categoriesApi.uploadImage(file),
-    onError: () => toast.error('Failed to upload image.'),
+    meta: { suppressError: true },
+    onError: (err) => toast.error(err instanceof Error ? err.message : 'Failed to upload image.'),
   })
 }
 
