@@ -16,6 +16,7 @@ export const BREADCRUMB_MAP: BreadcrumbMap = {
   '/cards': [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Cards' }],
   '/coupons': [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Coupons' }],
   '/banners': [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Banners' }],
+  '/store-categories': [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Store Categories' }],
   '/menus': [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Menus' }],
   '/notifications': [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Notifications' }],
   '/reports': [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Reports' }],

@@ -56,6 +56,9 @@ export const APP_ROUTES = {
     CREATE: '/banners/create',
     EDIT: (id: string) => `/banners/${id}/edit`,
   },
+  STORE_CATEGORIES: {
+    BASE: '/store-categories',
+  },
   MENUS: {
     BASE: '/menus',
     CREATE: '/menus/create',

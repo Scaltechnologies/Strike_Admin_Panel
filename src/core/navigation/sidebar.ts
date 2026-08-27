@@ -42,6 +42,7 @@ export const SIDEBAR_NAVIGATION: SidebarGroup[] = [
       { title: 'Cards', path: '/cards', icon: 'Layers', permission: PERMISSIONS.CARDS.EDIT },
       { title: 'Menus', path: '/menus', icon: 'UtensilsCrossed', permission: PERMISSIONS.MENUS.EDIT },
       { title: 'Coupons', path: '/coupons', icon: 'Tag', permission: PERMISSIONS.COUPONS.EDIT },
+      { title: 'Store Categories', path: '/store-categories', icon: 'LayoutGrid', permission: PERMISSIONS.STORES.EDIT },
       { title: 'Redemptions', path: '/redemptions', icon: 'Receipt' },
     ],
   },

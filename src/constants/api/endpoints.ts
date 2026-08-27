@@ -48,6 +48,10 @@ export const ENDPOINTS = {
     STATUS: (id: string) => `/api/admin/stores/${id}/status`,
     MANAGER: (id: string) => `/api/admin/stores/${id}/manager`,
   },
+  STORE_CATEGORIES: {
+    BASE: '/api/admin/store-categories',
+    BY_ID: (id: number | string) => `/api/admin/store-categories/${id}`,
+  },
   BRANCHES: {
     BASE: '/api/admin/branches',
     BY_ID: (id: string) => `/api/admin/branches/${id}`,

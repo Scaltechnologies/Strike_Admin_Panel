@@ -3,7 +3,7 @@ import { Link, useRouterState } from '@tanstack/react-router'
 import {
   LayoutDashboard, TrendingUp, Users, Store, Building2, GitBranch,
   ArrowDownCircle, Tag, Image, UtensilsCrossed, Bell,
-  BarChart2, Settings, FileText, Key, Banknote, Layers, User, Receipt,
+  BarChart2, Settings, FileText, Key, Banknote, Layers, User, Receipt, LayoutGrid,
 } from 'lucide-react'
 import type { LucideProps } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -14,7 +14,7 @@ type IconComponent = React.ComponentType<LucideProps>
 const ICON_MAP: Record<string, IconComponent> = {
   LayoutDashboard, TrendingUp, Users, Store, Building2, GitBranch,
   ArrowDownCircle, Tag, Image, UtensilsCrossed, Bell,
-  BarChart2, Settings, FileText, Key, Banknote, Layers, User, Receipt,
+  BarChart2, Settings, FileText, Key, Banknote, Layers, User, Receipt, LayoutGrid,
 }
 
 interface SidebarNavItemProps {

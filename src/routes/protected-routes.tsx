@@ -46,6 +46,9 @@ const PaymentsPage = lazy(() =>
 const BannersPage = lazy(() =>
   import('@/features/banners/BannersPage').then((m) => ({ default: m.BannersPage })),
 )
+const StoreCategoriesPage = lazy(() =>
+  import('@/features/store-categories/StoreCategoriesPage').then((m) => ({ default: m.StoreCategoriesPage })),
+)
 const AnalyticsPage = lazy(() =>
   import('@/features/analytics/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })),
 )
@@ -148,6 +151,12 @@ export const bannersRoute = createRoute({
   getParentRoute: () => protectedGroupRoute,
   path: '/banners',
   component: BannersPage,
+})
+
+export const storeCategoriesRoute = createRoute({
+  getParentRoute: () => protectedGroupRoute,
+  path: '/store-categories',
+  component: StoreCategoriesPage,
 })
 
 export const menusRoute = createRoute({
