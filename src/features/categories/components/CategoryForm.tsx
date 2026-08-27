@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X } from 'lucide-react'
 import { FileUploadField } from '@/components/forms/FileUploadField'
+import { resolveImageUrl } from '@/utils/helpers/media-url'
 import { useCreateCategory, useUpdateCategory, useUploadCategoryImage } from '../hooks/useCategories'
 import type { CategoryResponse, CreateCategoryRequest } from '../types/category.types'
 
@@ -37,7 +38,7 @@ export function CategoryForm({ open, onClose, editing }: CategoryFormProps) {
   })
 
   const [file, setFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(editing?.imageUrl ?? null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(resolveImageUrl(editing?.imageUrl))
   const [fileError, setFileError] = useState<string | null>(null)
   const objectUrlRef = useRef<string | null>(null)
 

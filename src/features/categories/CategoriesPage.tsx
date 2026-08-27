@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { Image, ToggleLeft, ToggleRight, Pencil, Trash2, Plus, LayoutGrid } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { resolveImageUrl } from '@/utils/helpers/media-url'
 import { DeleteConfirmation } from '@/components/common/DeleteConfirmation'
 import { useCategoryList, useUpdateCategoryStatus, useDeleteCategory } from './hooks/useCategories'
 import { CategoryForm } from './components/CategoryForm'
@@ -102,11 +103,12 @@ function CategoryCard({ category, onEdit, onToggle, onDelete, isToggling }: {
   isToggling: boolean
 }) {
   const isActive = category.status === 'ACTIVE'
+  const imageUrl = resolveImageUrl(category.imageUrl)
   return (
     <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
       <div className="relative h-36 bg-muted">
-        {category.imageUrl ? (
-          <img src={category.imageUrl} alt={category.name} className="h-full w-full object-cover" />
+        {imageUrl ? (
+          <img src={imageUrl} alt={category.name} className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <Image className="h-8 w-8 text-muted-foreground/40" />
