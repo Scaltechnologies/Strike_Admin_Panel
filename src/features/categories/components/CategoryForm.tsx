@@ -12,6 +12,7 @@ interface CategoryFormProps {
   open: boolean
   onClose: () => void
   editing?: CategoryResponse | null
+  categories: CategoryResponse[]
 }
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
@@ -27,14 +28,22 @@ function Field({ label, required, children }: { label: string; required?: boolea
 
 const inputCls = 'block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60'
 
-type FormState = Omit<CreateCategoryRequest, 'imageUrl'>
+type FormState = Omit<CreateCategoryRequest, 'imageUrl' | 'displayOrder'>
 
-export function CategoryForm({ open, onClose, editing }: CategoryFormProps) {
+// The admin no longer types a display order — it's auto-assigned as
+// "next available" so the create form can never collide with an existing
+// category's order (see the 409 this used to cause). Editing preserves
+// whatever order the category already has; reordering isn't done here.
+function nextDisplayOrder(categories: CategoryResponse[]): number {
+  if (categories.length === 0) return 1
+  return Math.max(...categories.map((c) => c.displayOrder ?? 0)) + 1
+}
+
+export function CategoryForm({ open, onClose, editing, categories }: CategoryFormProps) {
   const isEdit = !!editing
   const [form, setForm] = useState<FormState>({
     name: editing?.name ?? '',
     description: editing?.description ?? '',
-    displayOrder: editing?.displayOrder ?? 0,
   })
 
   const [file, setFile] = useState<File | null>(null)
@@ -51,7 +60,7 @@ export function CategoryForm({ open, onClose, editing }: CategoryFormProps) {
   const { mutate: update, isPending: updating } = useUpdateCategory()
   const isPending = uploading || creating || updating
 
-  function set(k: keyof FormState, v: string | number) {
+  function set(k: keyof FormState, v: string) {
     setForm((p) => ({ ...p, [k]: v }))
   }
 
@@ -91,6 +100,7 @@ export function CategoryForm({ open, onClose, editing }: CategoryFormProps) {
       ...form,
       imageUrl,
       description: form.description || undefined,
+      displayOrder: isEdit ? editing!.displayOrder ?? 0 : nextDisplayOrder(categories),
     }
     if (isEdit) {
       update({ id: editing!.id, payload }, { onSuccess: onClose })
@@ -138,9 +148,6 @@ export function CategoryForm({ open, onClose, editing }: CategoryFormProps) {
                 )}
                 <Field label="Description">
                   <textarea rows={2} className={inputCls + ' resize-none'} value={form.description ?? ''} onChange={(e) => set('description', e.target.value)} placeholder="Short description…" disabled={isPending} />
-                </Field>
-                <Field label="Display Order">
-                  <input type="number" min={0} className={inputCls} value={form.displayOrder ?? 0} onChange={(e) => set('displayOrder', Number(e.target.value))} disabled={isPending} />
                 </Field>
               </div>
 

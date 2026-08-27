@@ -79,6 +79,7 @@ export function CategoriesPage() {
         open={formOpen}
         onClose={closeForm}
         editing={editing}
+        categories={categories}
       />
 
       <DeleteConfirmation
