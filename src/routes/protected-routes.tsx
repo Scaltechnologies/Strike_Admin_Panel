@@ -49,6 +49,9 @@ const BannersPage = lazy(() =>
 const StoreCategoriesPage = lazy(() =>
   import('@/features/store-categories/StoreCategoriesPage').then((m) => ({ default: m.StoreCategoriesPage })),
 )
+const CategoriesPage = lazy(() =>
+  import('@/features/categories/CategoriesPage').then((m) => ({ default: m.CategoriesPage })),
+)
 const AnalyticsPage = lazy(() =>
   import('@/features/analytics/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })),
 )
@@ -157,6 +160,12 @@ export const storeCategoriesRoute = createRoute({
   getParentRoute: () => protectedGroupRoute,
   path: '/store-categories',
   component: StoreCategoriesPage,
+})
+
+export const categoriesRoute = createRoute({
+  getParentRoute: () => protectedGroupRoute,
+  path: '/categories',
+  component: CategoriesPage,
 })
 
 export const menusRoute = createRoute({

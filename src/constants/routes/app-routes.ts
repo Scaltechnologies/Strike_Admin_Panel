@@ -59,6 +59,9 @@ export const APP_ROUTES = {
   STORE_CATEGORIES: {
     BASE: '/store-categories',
   },
+  CATEGORIES: {
+    BASE: '/categories',
+  },
   MENUS: {
     BASE: '/menus',
     CREATE: '/menus/create',

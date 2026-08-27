@@ -68,6 +68,14 @@ export const ENDPOINTS = {
     CATEGORIES: (storeId: string) => `/api/admin/menu/store/${storeId}/categories`,
     ITEMS: (storeId: string) => `/api/admin/menu/store/${storeId}/items`,
   },
+  // Global master menu categories (distinct from MENUS.CATEGORIES above, which reads one
+  // store's own category usage) — admin-managed, used across menu organization + card eligibility.
+  CATEGORIES: {
+    BASE: '/api/admin/categories',
+    BY_ID: (id: number | string) => `/api/admin/categories/${id}`,
+    STATUS: (id: number | string) => `/api/admin/categories/${id}/status`,
+    UPLOAD: '/api/admin/categories/upload-image',
+  },
   CARDS: {
     BASE: '/api/admin/cards',
     BY_ID: (id: string) => `/api/admin/cards/${id}`,
