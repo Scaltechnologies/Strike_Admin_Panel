@@ -24,7 +24,7 @@ export function useCreateStoreCategory() {
     },
     onError: (err: unknown) => {
       const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast.error(message ?? 'Failed to create category.')
+      toast.error(message || 'Failed to create category.')
     },
   })
 }
@@ -40,7 +40,7 @@ export function useUpdateStoreCategory() {
     },
     onError: (err: unknown) => {
       const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast.error(message ?? 'Failed to update category.')
+      toast.error(message || 'Failed to update category.')
     },
   })
 }

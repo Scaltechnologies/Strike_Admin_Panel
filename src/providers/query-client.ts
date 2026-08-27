@@ -8,7 +8,7 @@ interface ApiErrorData {
 
 function getErrorMessage(error: unknown): string {
   const axiosError = error as AxiosError<ApiErrorData>
-  return axiosError.response?.data?.message ?? 'An unexpected error occurred'
+  return axiosError.response?.data?.message || 'An unexpected error occurred'
 }
 
 export const queryClient = new QueryClient({

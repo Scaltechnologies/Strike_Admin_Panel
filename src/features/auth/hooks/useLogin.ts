@@ -47,7 +47,7 @@ export function useLogin() {
         return
       }
       const message =
-        axiosError.response.data?.message ?? 'Login failed. Please check your credentials.'
+        axiosError.response.data?.message || 'Login failed. Please check your credentials.'
       toast.error(message)
     },
   })

@@ -43,7 +43,7 @@ export function useReversePayment() {
     },
     onError: (error) => {
       const message = (error as AxiosError<{ message?: string }>).response?.data?.message
-      toast.error(message ?? 'Failed to reverse payment.')
+      toast.error(message || 'Failed to reverse payment.')
     },
   })
 }

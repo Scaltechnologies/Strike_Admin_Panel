@@ -69,7 +69,7 @@ export function useDeleteCategory() {
     },
     onError: (err: unknown) => {
       const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast.error(message ?? 'Failed to delete category.')
+      toast.error(message || 'Failed to delete category.')
     },
   })
 }
