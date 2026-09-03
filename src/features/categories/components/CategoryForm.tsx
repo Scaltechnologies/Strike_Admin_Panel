@@ -1,18 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X } from 'lucide-react'
-import { FileUploadField } from '@/components/forms/FileUploadField'
+import { ImagePlus, X } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { FormError } from '@/components/forms/FormError'
 import { resolveImageUrl } from '@/utils/helpers/media-url'
 import { useCreateCategory, useUpdateCategory, useUploadCategoryImage } from '../hooks/useCategories'
 import type { CategoryResponse, CreateCategoryRequest } from '../types/category.types'
 
-const MAX_FILE_BYTES = 5 * 1024 * 1024
+// Must match FileStorageServiceImpl.MAX_CATEGORY_IMAGE_SIZE_BYTES / ALLOWED_CONTENT_TYPES on the
+// backend — banners keep a separate, smaller 5MB limit there, so this is intentionally not shared.
+const MAX_FILE_BYTES = 15 * 1024 * 1024
+const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
 interface CategoryFormProps {
   open: boolean
   onClose: () => void
   editing?: CategoryResponse | null
-  categories: CategoryResponse[]
 }
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
@@ -30,23 +33,16 @@ const inputCls = 'block w-full rounded-lg border border-border bg-background px-
 
 type FormState = Omit<CreateCategoryRequest, 'imageUrl'>
 
-// Display order defaults to "next available" (max existing + 1) so the
-// common case — adding a category to the end — needs no thought from the
-// admin. It's still a plain editable field below: the admin can type over
-// this default to place the category anywhere, including a number that
-// collides with an existing one (the backend is the source of truth on
-// whether that's allowed).
-function nextDisplayOrder(categories: CategoryResponse[]): number {
-  if (categories.length === 0) return 1
-  return Math.max(...categories.map((c) => c.displayOrder ?? 0)) + 1
-}
-
-export function CategoryForm({ open, onClose, editing, categories }: CategoryFormProps) {
+export function CategoryForm({ open, onClose, editing }: CategoryFormProps) {
   const isEdit = !!editing
   const [form, setForm] = useState<FormState>({
     name: editing?.name ?? '',
     description: editing?.description ?? '',
-    displayOrder: editing?.displayOrder ?? nextDisplayOrder(categories),
+    // The backend always auto-assigns displayOrder on create (max + 1) and ignores whatever the
+    // request sends — it's only ever respected on update. So this stays unset on create and the
+    // field below is hidden until editing, instead of showing a number the admin's choice can't
+    // actually control.
+    displayOrder: editing?.displayOrder ?? undefined,
   })
 
   const [file, setFile] = useState<File | null>(null)
@@ -71,12 +67,12 @@ export function CategoryForm({ open, onClose, editing, categories }: CategoryFor
     const picked = e.target.files?.[0] ?? null
     e.target.value = ''
     if (!picked) return
-    if (!picked.type.startsWith('image/')) {
-      setFileError('Please choose an image file.')
+    if (!ALLOWED_TYPES.has(picked.type)) {
+      setFileError('Only JPEG, PNG or WEBP images are allowed.')
       return
     }
     if (picked.size > MAX_FILE_BYTES) {
-      setFileError('Image must be under 5MB.')
+      setFileError('Image must be under 15MB.')
       return
     }
     setFileError(null)
@@ -100,9 +96,11 @@ export function CategoryForm({ open, onClose, editing, categories }: CategoryFor
     }
 
     const payload: CreateCategoryRequest = {
-      ...form,
-      imageUrl,
+      name: form.name,
       description: form.description || undefined,
+      imageUrl,
+      // Omitted on create: the backend ignores it there regardless (see displayOrder comment above).
+      ...(isEdit ? { displayOrder: form.displayOrder } : {}),
     }
     if (isEdit) {
       update({ id: editing!.id, payload }, { onSuccess: onClose })
@@ -134,26 +132,49 @@ export function CategoryForm({ open, onClose, editing, categories }: CategoryFor
                   <input className={inputCls} value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="e.g. Appetizers" required disabled={isPending} />
                 </Field>
                 <Field label="Image">
-                  <FileUploadField
-                    dragAndDrop
-                    accept="image/*"
-                    helperText="PNG or JPG, up to 5MB (optional)"
-                    error={fileError ?? undefined}
-                    onChange={handleFileChange}
-                    disabled={isPending}
-                  />
-                </Field>
-                {previewUrl && (
-                  <div className="overflow-hidden rounded-lg border border-border">
-                    <img src={previewUrl} alt="Preview" className="h-32 w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                  <div className="flex items-center gap-3">
+                    <label
+                      className={cn(
+                        'group relative flex h-20 w-20 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-muted/30 transition-colors hover:border-primary',
+                        fileError && 'border-destructive',
+                        isPending && 'pointer-events-none opacity-60',
+                      )}
+                    >
+                      {previewUrl ? (
+                        <>
+                          <img
+                            src={previewUrl}
+                            alt="Category"
+                            className="h-full w-full object-cover"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-opacity group-hover:bg-black/50 group-hover:opacity-100">
+                            <span className="text-[10px] font-medium text-white">Change</span>
+                          </div>
+                        </>
+                      ) : (
+                        <ImagePlus className="h-5 w-5 text-muted-foreground" />
+                      )}
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="sr-only"
+                        onChange={handleFileChange}
+                        disabled={isPending}
+                      />
+                    </label>
+                    <p className="text-xs text-muted-foreground">JPEG, PNG or WEBP, up to 15MB (optional). Square images look best.</p>
                   </div>
-                )}
+                  <FormError message={fileError ?? undefined} />
+                </Field>
                 <Field label="Description">
                   <textarea rows={2} className={inputCls + ' resize-none'} value={form.description ?? ''} onChange={(e) => set('description', e.target.value)} placeholder="Short description…" disabled={isPending} />
                 </Field>
-                <Field label="Display Order">
-                  <input type="number" min={0} className={inputCls} value={form.displayOrder ?? 0} onChange={(e) => set('displayOrder', Number(e.target.value))} disabled={isPending} />
-                </Field>
+                {isEdit && (
+                  <Field label="Display Order">
+                    <input type="number" min={0} className={inputCls} value={form.displayOrder ?? 0} onChange={(e) => set('displayOrder', Number(e.target.value))} disabled={isPending} />
+                  </Field>
+                )}
               </div>
 
               <div className="mt-4 flex gap-2 border-t border-border pt-4">

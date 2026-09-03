@@ -79,7 +79,6 @@ export function CategoriesPage() {
         open={formOpen}
         onClose={closeForm}
         editing={editing}
-        categories={categories}
       />
 
       <DeleteConfirmation
@@ -121,7 +120,7 @@ function CategoryCard({ category, onEdit, onToggle, onDelete, isToggling }: {
         )}>
           {isActive ? 'Active' : 'Inactive'}
         </div>
-        {!!category.displayOrder && (
+        {category.displayOrder != null && (
           <div className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-medium text-white">
             #{category.displayOrder}
           </div>
