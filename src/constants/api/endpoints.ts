@@ -136,13 +136,10 @@ export const ENDPOINTS = {
     BY_ID: (id: number | string) => `/api/admin/notifications/${id}`,
     BY_USER: (id: string) => `/api/admin/notifications/user/${id}`,
     BY_VENDOR: (id: string) => `/api/admin/notifications/vendor/${id}`,
-    // PENDING BACKEND — no push/in-app/template controllers exist in notification-service yet.
-    // Paths below describe the anticipated contract (see notification.types.ts).
     PUSH: {
       DEVICES: '/api/admin/notifications/push/devices',
       DEVICE_STATS: '/api/admin/notifications/push/devices/stats',
       DEVICE_BY_ID: (id: number | string) => `/api/admin/notifications/push/devices/${id}`,
-      STATS: '/api/admin/notifications/push/stats',
       SEND: '/api/admin/notifications/push/send',
       SEND_BULK: '/api/admin/notifications/push/send/bulk',
     },
@@ -175,6 +172,9 @@ export const ENDPOINTS = {
   SETTINGS: {
     BASE: '/api/admin/settings',
     BY_KEY: (key: string) => `/api/admin/settings/${key}`,
+    // Dedicated, validated endpoint — distinct from the generic BY_KEY upsert, which accepts any
+    // arbitrary string value with no server-side validation of the enum.
+    PAYMENT_MODE: '/api/admin/settings/payment-mode',
   },
   AUDIT_LOGS: {
     BASE: '/api/admin/audit-logs',

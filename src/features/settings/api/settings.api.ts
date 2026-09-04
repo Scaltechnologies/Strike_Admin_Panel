@@ -4,6 +4,8 @@ import type {
   PlatformSetting,
   GlobalCommissionRate,
   CommissionRateHistoryPage,
+  PaymentMode,
+  PaymentModeSetting,
 } from '../types/settings.types'
 
 export const settingsApi = {
@@ -14,6 +16,16 @@ export const settingsApi = {
     axiosInstance
       .put(ENDPOINTS.SETTINGS.BY_KEY(key), { settingValue })
       .then((r) => r.data as PlatformSetting),
+}
+
+export const paymentModeApi = {
+  get: (): Promise<PaymentModeSetting> =>
+    axiosInstance.get(ENDPOINTS.SETTINGS.PAYMENT_MODE).then((r) => r.data as PaymentModeSetting),
+
+  update: (paymentMode: PaymentMode): Promise<PaymentModeSetting> =>
+    axiosInstance
+      .patch(ENDPOINTS.SETTINGS.PAYMENT_MODE, { paymentMode })
+      .then((r) => r.data as PaymentModeSetting),
 }
 
 export const commissionSettingsApi = {

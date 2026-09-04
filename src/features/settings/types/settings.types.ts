@@ -14,7 +14,17 @@ export interface PlatformSetting {
 
 export const SETTING_KEYS = {
   MAINTENANCE_MODE: 'MAINTENANCE_MODE',
+  PAYMENT_MODE: 'PAYMENT_MODE',
 } as const
+
+// Matches card-service's PaymentMode enum exactly — ONLINE_ONLY takes Pay at Store out of
+// rotation, PAY_AT_STORE_ONLY takes Razorpay checkout out of rotation (the interim state while
+// live keys aren't provisioned yet), BOTH is the normal/default state.
+export type PaymentMode = 'ONLINE_ONLY' | 'PAY_AT_STORE_ONLY' | 'BOTH'
+
+export interface PaymentModeSetting {
+  paymentMode: PaymentMode
+}
 
 // Verified live against GET/PATCH /api/admin/commissions/rate/global.
 export interface GlobalCommissionRate {

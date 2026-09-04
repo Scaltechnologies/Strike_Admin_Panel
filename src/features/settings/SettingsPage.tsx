@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { Sun, Moon, Monitor, Check, AlertTriangle, Percent, TrendingUp } from 'lucide-react'
+import {
+  Sun, Moon, Monitor, Check, AlertTriangle, Percent, TrendingUp, Zap, Store, Wallet,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/core/theme/use-theme'
 import type { Theme } from '@/constants/theme'
@@ -7,9 +9,12 @@ import { usePermission } from '@/core/permissions/permissions'
 import { PERMISSIONS } from '@/constants/permissions'
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog'
 import { formatDate } from '@/utils/helpers/date'
+import type { PaymentMode } from './types/settings.types'
 import {
   useMaintenanceMode,
   useUpdateMaintenanceMode,
+  usePaymentMode,
+  useUpdatePaymentMode,
   useGlobalCommissionRate,
   useGlobalCommissionRateHistory,
   useUpdateGlobalCommissionRate,
@@ -128,6 +133,121 @@ function MaintenanceModeCard() {
         variant="destructive"
         onConfirm={handleEnable}
         onCancel={() => setShowConfirm(false)}
+        isLoading={isPending}
+      />
+    </SectionCard>
+  )
+}
+
+const PAYMENT_MODE_OPTIONS: {
+  value: PaymentMode
+  label: string
+  description: string
+  icon: React.ElementType
+}[] = [
+  { value: 'BOTH', label: 'Both enabled', description: 'Online payment and Pay at Store', icon: Wallet },
+  { value: 'ONLINE_ONLY', label: 'Online only', description: 'Pay at Store is hidden platform-wide', icon: Zap },
+  { value: 'PAY_AT_STORE_ONLY', label: 'Pay at Store only', description: 'Online (Razorpay) checkout is disabled', icon: Store },
+]
+
+function PaymentModeCard() {
+  const canEdit = usePermission(PERMISSIONS.SETTINGS.EDIT)
+  const { data: setting, isLoading } = usePaymentMode()
+  const { mutate: updatePaymentMode, isPending } = useUpdatePaymentMode()
+
+  const [pendingMode, setPendingMode] = useState<PaymentMode | null>(null)
+
+  const currentMode = setting?.paymentMode ?? 'BOTH'
+
+  function handleSelect(mode: PaymentMode) {
+    if (mode === currentMode || isPending) return
+    // BOTH only ever restores availability — nothing is being taken away, so it doesn't need
+    // the same "are you sure" as the other two, which each disable a real payment path for
+    // every user/vendor on the platform immediately.
+    if (mode === 'BOTH') {
+      updatePaymentMode(mode)
+    } else {
+      setPendingMode(mode)
+    }
+  }
+
+  function handleConfirm() {
+    if (!pendingMode) return
+    updatePaymentMode(pendingMode, { onSuccess: () => setPendingMode(null) })
+  }
+
+  const pendingOption = PAYMENT_MODE_OPTIONS.find((o) => o.value === pendingMode)
+
+  return (
+    <SectionCard
+      title="Payment Mode"
+      description="Choose which payment method(s) checkout accepts across the user app — use this to run on Pay at Store only until Razorpay's live keys are ready"
+    >
+      {isLoading ? (
+        <div className="h-20 animate-pulse rounded-lg bg-muted" />
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {PAYMENT_MODE_OPTIONS.map((opt) => {
+              const Icon = opt.icon
+              const active = currentMode === opt.value
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  disabled={!canEdit || isPending}
+                  onClick={() => handleSelect(opt.value)}
+                  className={cn(
+                    'relative flex flex-col items-start gap-2 rounded-xl border-2 p-4 text-left transition-all disabled:cursor-not-allowed disabled:opacity-60',
+                    active
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border bg-card hover:border-border/80 hover:bg-muted/50',
+                  )}
+                >
+                  {active && (
+                    <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                      <Check className="h-2.5 w-2.5" />
+                    </span>
+                  )}
+                  <div
+                    className={cn(
+                      'flex h-9 w-9 items-center justify-center rounded-lg',
+                      active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
+                    )}
+                  >
+                    <Icon className="h-4 w-4" aria-hidden />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{opt.label}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{opt.description}</p>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+
+          {!canEdit && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              You don't have permission to change the payment mode.
+            </p>
+          )}
+        </>
+      )}
+
+      <ConfirmationDialog
+        open={pendingMode != null}
+        title={`Switch to "${pendingOption?.label}"?`}
+        description={
+          pendingMode === 'ONLINE_ONLY'
+            ? 'This immediately hides Pay at Store as a checkout option for every user, platform-wide. Vendors will stop receiving new Pay-at-Store orders until this is changed back.'
+            : 'This immediately disables Razorpay checkout for every user, platform-wide. Every purchase will go through Pay at Store until this is changed back.'
+        }
+        confirmLabel="Switch mode"
+        variant="destructive"
+        onConfirm={handleConfirm}
+        onCancel={() => setPendingMode(null)}
         isLoading={isPending}
       />
     </SectionCard>
@@ -299,6 +419,9 @@ export function SettingsPage() {
       <div className="max-w-2xl space-y-6">
         {/* Maintenance Mode */}
         <MaintenanceModeCard />
+
+        {/* Payment Mode */}
+        <PaymentModeCard />
 
         {/* Default Commission Rate */}
         <DefaultCommissionCard />
