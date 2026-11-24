@@ -4,6 +4,7 @@ import { ImagePlus, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { FormError } from '@/components/forms/FormError'
 import { resolveImageUrl } from '@/utils/helpers/media-url'
+import { compressImage } from '@/utils/helpers/compress-image'
 import { useCreateCategory, useUpdateCategory, useUploadCategoryImage } from '../hooks/useCategories'
 import type { CategoryResponse, CreateCategoryRequest } from '../types/category.types'
 
@@ -57,7 +58,8 @@ export function CategoryForm({ open, onClose, editing }: CategoryFormProps) {
   const { mutateAsync: uploadImage, isPending: uploading } = useUploadCategoryImage()
   const { mutate: create, isPending: creating } = useCreateCategory()
   const { mutate: update, isPending: updating } = useUpdateCategory()
-  const isPending = uploading || creating || updating
+  const [preparing, setPreparing] = useState(false)
+  const isPending = preparing || uploading || creating || updating
 
   function set(k: keyof FormState, v: string | number) {
     setForm((p) => ({ ...p, [k]: v }))
@@ -88,10 +90,19 @@ export function CategoryForm({ open, onClose, editing }: CategoryFormProps) {
 
     let imageUrl = editing?.imageUrl ?? undefined
     if (file) {
+      // Shrink large photos first: the production proxy rejects big request bodies (413)
+      // before they reach the backend. See compressImage for details.
+      setPreparing(true)
+      let toUpload: File
       try {
-        imageUrl = await uploadImage(file)
+        toUpload = await compressImage(file)
+      } finally {
+        setPreparing(false)
+      }
+      try {
+        imageUrl = await uploadImage(toUpload)
       } catch {
-        return // useUploadCategoryImage's onError already surfaced a toast
+        return // useUploadCategoryImage's onError already surfaced a toast; nothing is saved
       }
     }
 
@@ -163,7 +174,7 @@ export function CategoryForm({ open, onClose, editing }: CategoryFormProps) {
                         disabled={isPending}
                       />
                     </label>
-                    <p className="text-xs text-muted-foreground">JPEG, PNG or WEBP, up to 15MB (optional). Square images look best.</p>
+                    <p className="text-xs text-muted-foreground">JPEG, PNG or WEBP, up to 15MB (optional). Large images are resized automatically. Square images look best.</p>
                   </div>
                   <FormError message={fileError ?? undefined} />
                 </Field>
@@ -184,7 +195,7 @@ export function CategoryForm({ open, onClose, editing }: CategoryFormProps) {
                 </button>
                 <button type="submit" disabled={isPending}
                   className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60">
-                  {uploading ? 'Uploading…' : isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Category'}
+                  {preparing ? 'Preparing image…' : uploading ? 'Uploading…' : isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Category'}
                 </button>
               </div>
             </form>
