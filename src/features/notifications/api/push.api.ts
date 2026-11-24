@@ -1,5 +1,5 @@
-// PENDING BACKEND — notification-service has no push channel (FCM/APNs) or device registry yet.
-// Calls here will 404 until that ships. See notification.types.ts for the anticipated contract.
+// Push channel (FCM) + device registry — see AdminNotificationController's push/* endpoints on
+// notification-service (proxied verbatim by admin-service).
 import axiosInstance from '@/api/axios'
 import { ENDPOINTS } from '@/constants/api/endpoints'
 import type {

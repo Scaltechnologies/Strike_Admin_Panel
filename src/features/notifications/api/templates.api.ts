@@ -1,5 +1,5 @@
-// PENDING BACKEND — no template entity or controller exists in notification-service yet. Messages
-// are freeform text passed at send time today. Calls here will 404 until templates ship.
+// Notification templates — backed by notification-service's NotificationTemplate entity/controller
+// (proxied verbatim by admin-service).
 import axiosInstance from '@/api/axios'
 import { ENDPOINTS } from '@/constants/api/endpoints'
 import type {

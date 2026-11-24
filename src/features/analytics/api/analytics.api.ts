@@ -6,8 +6,8 @@ export const analyticsApi = {
   getOverview: (): Promise<AnalyticsOverview> =>
     axiosInstance.get(ENDPOINTS.ANALYTICS.OVERVIEW).then((r) => r.data as AnalyticsOverview),
 
-  getRevenue: (): Promise<RevenueData[]> =>
-    axiosInstance.get(ENDPOINTS.ANALYTICS.REVENUE).then((r) => r.data as RevenueData[]),
+  getRevenue: (): Promise<RevenueData> =>
+    axiosInstance.get(ENDPOINTS.ANALYTICS.REVENUE).then((r) => r.data as RevenueData),
 
   getVendorPerformance: (): Promise<VendorPerformance[]> =>
     axiosInstance.get(ENDPOINTS.ANALYTICS.VENDOR_PERFORMANCE).then((r) => r.data as VendorPerformance[]),

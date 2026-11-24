@@ -25,6 +25,9 @@ const CouponsPage = lazy(() =>
 const MenusPage = lazy(() =>
   import('@/features/menus/MenusPage').then((m) => ({ default: m.MenusPage })),
 )
+const CategoriesPage = lazy(() =>
+  import('@/features/categories/CategoriesPage').then((m) => ({ default: m.CategoriesPage })),
+)
 const CardsPage = lazy(() =>
   import('@/features/cards/CardsPage').then((m) => ({ default: m.CardsPage })),
 )
@@ -48,9 +51,6 @@ const BannersPage = lazy(() =>
 )
 const StoreCategoriesPage = lazy(() =>
   import('@/features/store-categories/StoreCategoriesPage').then((m) => ({ default: m.StoreCategoriesPage })),
-)
-const CategoriesPage = lazy(() =>
-  import('@/features/categories/CategoriesPage').then((m) => ({ default: m.CategoriesPage })),
 )
 const AnalyticsPage = lazy(() =>
   import('@/features/analytics/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })),

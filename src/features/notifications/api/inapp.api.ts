@@ -1,5 +1,5 @@
-// PENDING BACKEND — the NotificationLog entity has no in-app storage or read-state fields, and no
-// in-app controller exists in notification-service yet. Calls here will 404 until that ships.
+// In-app inbox — backed by notification-service's InAppNotification entity/controller (proxied
+// verbatim by admin-service).
 import axiosInstance from '@/api/axios'
 import { ENDPOINTS } from '@/constants/api/endpoints'
 import type {

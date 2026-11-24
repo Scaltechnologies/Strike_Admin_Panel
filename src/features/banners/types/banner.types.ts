@@ -4,6 +4,7 @@ export interface BannerResponse {
   imageUrl: string
   linkUrl: string | null
   description: string | null
+  placement: string
   isActive: boolean
   validFrom: string | null
   validUntil: string | null

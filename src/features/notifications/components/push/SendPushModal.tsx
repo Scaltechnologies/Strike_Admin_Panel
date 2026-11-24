@@ -8,9 +8,9 @@ import { cn } from '@/lib/utils'
 import { useSendPush, useSendPushBulk } from '../../hooks/usePushNotifications'
 import type { RecipientType, BroadcastSegment } from '../../types/notification.types'
 
-// PENDING BACKEND — anticipated contract for POST /api/admin/notifications/push/send(/bulk).
-// Unlike SMS (which has no broadcast capability), push is well suited to segment-wide sends, so this
-// form supports both a specific-recipient target and an all-{users,vendors,admins} broadcast.
+// POST /api/admin/notifications/push/send(/bulk). Unlike SMS (which has no broadcast capability),
+// push is well suited to segment-wide sends, so this form supports both a specific-recipient
+// target and an all-{users,vendors,admins} broadcast.
 const schema = z
   .object({
     targetMode: z.enum(['specific', 'broadcast']),
@@ -19,6 +19,10 @@ const schema = z
     segment: z.enum(['ALL_USERS', 'ALL_VENDORS', 'ALL_ADMINS']),
     title: z.string().min(1, 'Title is required').max(65, 'Max 65 characters'),
     message: z.string().min(1, 'Message is required').max(240, 'Max 240 characters'),
+    // Matches the `data.deepLink` key EventNotificationServiceImpl already sends for every
+    // system-triggered push (see notification-service) — the client app reads this same key to
+    // navigate on tap. Optional so this form still works as a plain announcement.
+    deepLink: z.string().optional(),
   })
   .superRefine((values, ctx) => {
     if (values.targetMode === 'specific' && values.recipientId == null) {
@@ -73,6 +77,7 @@ export function SendPushModal({ open, onClose }: Props) {
       segment: 'ALL_USERS',
       title: '',
       message: '',
+      deepLink: '',
     },
   })
 
@@ -92,6 +97,7 @@ export function SendPushModal({ open, onClose }: Props) {
   }, [onClose, isPending])
 
   function onSubmit(values: FormValues) {
+    const data = values.deepLink ? { deepLink: values.deepLink } : undefined
     if (values.targetMode === 'specific') {
       sendPush(
         {
@@ -99,12 +105,13 @@ export function SendPushModal({ open, onClose }: Props) {
           recipientType: values.recipientType,
           title: values.title,
           message: values.message,
+          data,
         },
         { onSuccess: () => { reset(); onClose() } },
       )
     } else {
       sendPushBulk(
-        { segment: values.segment, title: values.title, message: values.message },
+        { segment: values.segment, title: values.title, message: values.message, data },
         { onSuccess: () => { reset(); onClose() } },
       )
     }
@@ -274,6 +281,22 @@ export function SendPushModal({ open, onClose }: Props) {
                   />
                   {errors.message && <p className={ERROR_CLS} role="alert">{errors.message.message}</p>}
                   <p className="mt-1 text-[11px] text-muted-foreground">{watch('message')?.length ?? 0} / 240 characters</p>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                    Deep link <span className="text-muted-foreground/70">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    className={cn(INPUT_CLS, 'font-mono')}
+                    placeholder="e.g. /subscriptions/123"
+                    disabled={isPending}
+                    {...register('deepLink')}
+                  />
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    Screen the client app opens when the recipient taps this notification.
+                  </p>
                 </div>
               </div>
 

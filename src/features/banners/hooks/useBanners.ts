@@ -81,11 +81,11 @@ export function useDeleteBanner() {
 export function useToggleBanner() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, active }: { id: number; active: boolean }) =>
-      active ? bannersApi.deactivate(id) : bannersApi.activate(id),
+    mutationFn: ({ id, isActive }: { id: number; isActive: boolean }) =>
+      isActive ? bannersApi.deactivate(id) : bannersApi.activate(id),
     meta: { suppressError: true },
     onSuccess: (_, vars) => {
-      toast.success(vars.active ? 'Banner deactivated.' : 'Banner activated.')
+      toast.success(vars.isActive ? 'Banner deactivated.' : 'Banner activated.')
       void qc.invalidateQueries({ queryKey: BANNER_QUERY_KEYS.all })
     },
     onError: () => toast.error('Failed to update banner status.'),

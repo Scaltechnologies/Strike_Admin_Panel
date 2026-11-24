@@ -26,6 +26,10 @@ function StatCard({ label, value, icon: Icon, color, isLoading, prefix = '' }: {
   )
 }
 
+function inr(value: number | null | undefined) {
+  return `₹${Number(value ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
+}
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
@@ -95,10 +99,10 @@ export function AnalyticsPage() {
               ))
             ) : commissions ? (
               <>
-                <DataRow label="Total Commissions" value={commissions.totalCommissions ?? '—'} />
-                <DataRow label="Settled" value={commissions.settledCommissions ?? '—'} />
-                <DataRow label="Pending" value={commissions.pendingCommissions ?? '—'} />
-                <DataRow label="Total Amount" value={commissions.totalAmount != null ? `₹${Number(commissions.totalAmount).toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : '—'} />
+                <DataRow label="Total Commission" value={inr(commissions.totalCommission)} />
+                <DataRow label={`Settled (${commissions.settledCount ?? 0})`} value={inr(commissions.totalSettled)} />
+                <DataRow label={`Pending (${commissions.pendingCount ?? 0})`} value={inr(commissions.totalPending)} />
+                <DataRow label="Subscription Revenue" value={inr(revenue?.totalRevenue)} />
               </>
             ) : (
               <p className="py-6 text-center text-sm text-muted-foreground">No commission data</p>
@@ -121,13 +125,14 @@ export function AnalyticsPage() {
                 </div>
               ))}
             </div>
-          ) : revenue && revenue.length > 0 ? (
+          ) : revenue?.monthly && revenue.monthly.length > 0 ? (
             <div className="divide-y divide-border">
-              {revenue.slice(0, 8).map((r, i) => (
+              {/* newest month first */}
+              {[...revenue.monthly].reverse().slice(0, 8).map((r) => (
                 <DataRow
-                  key={i}
-                  label={String(r.period ?? `Period ${i + 1}`)}
-                  value={r.revenue != null ? `₹${Number(r.revenue).toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : '—'}
+                  key={r.month}
+                  label={r.month}
+                  value={`${inr(r.subscriptionRevenue)} · commission ${inr(r.commission)}`}
                 />
               ))}
             </div>
@@ -146,7 +151,7 @@ export function AnalyticsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/40">
-                {['Vendor', 'Revenue', 'Orders', 'Commission'].map((h) => (
+                {['Vendor', 'Revenue', 'Subscriptions', 'Commission'].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">{h}</th>
                 ))}
               </tr>
@@ -164,14 +169,13 @@ export function AnalyticsPage() {
                 vendors.slice(0, 10).map((v, i) => (
                   <tr key={i} className="hover:bg-muted/30">
                     <td className="px-4 py-3">
-                      <span className="font-medium text-foreground">{v.vendorName ?? `Vendor #${v.vendorId}`}</span>
+                      <span className="font-medium text-foreground">{v.hotelName || `Vendor #${v.vendorId}`}</span>
                     </td>
+                    <td className="px-4 py-3 text-foreground">{inr(v.totalSubscriptionRevenue)}</td>
+                    <td className="px-4 py-3 text-foreground">{v.subscriptionCount ?? 0}</td>
                     <td className="px-4 py-3 text-foreground">
-                      {v.totalRevenue != null ? `₹${Number(v.totalRevenue).toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-foreground">{v.totalOrders ?? '—'}</td>
-                    <td className="px-4 py-3 text-foreground">
-                      {v.commissionEarned != null ? `₹${Number(v.commissionEarned).toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : '—'}
+                      {inr(v.totalCommission)}
+                      <span className="ml-1 text-xs text-muted-foreground">({Number(v.commissionRate ?? 0).toFixed(1)}%)</span>
                     </td>
                   </tr>
                 ))

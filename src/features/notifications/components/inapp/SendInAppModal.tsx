@@ -8,9 +8,9 @@ import { cn } from '@/lib/utils'
 import { useSendInApp, useSendInAppBulk } from '../../hooks/useInAppNotifications'
 import type { RecipientType, BroadcastSegment } from '../../types/notification.types'
 
-// PENDING BACKEND — anticipated contract for POST /api/admin/notifications/inapp/send(/bulk).
-// Mirrors SendPushModal's specific-vs-broadcast targeting; in-app inbox entries also carry an
-// optional deep-link (actionUrl) the client app can navigate to when the entry is tapped.
+// POST /api/admin/notifications/inapp/send(/bulk). Mirrors SendPushModal's specific-vs-broadcast
+// targeting; in-app inbox entries also carry an optional deep-link (actionUrl) the client app can
+// navigate to when the entry is tapped.
 const schema = z
   .object({
     targetMode: z.enum(['specific', 'broadcast']),

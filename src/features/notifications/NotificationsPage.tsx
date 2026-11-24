@@ -101,8 +101,7 @@ export function NotificationsPage() {
         <div>
           <h1 className="text-xl font-semibold text-foreground">Notifications</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            SMS/Email logs and outbound messaging across the platform — Push, In-App and Templates are
-            UI-complete but awaiting backend endpoints
+            SMS/Email logs, push, in-app messaging, and reusable templates across the platform
           </p>
         </div>
         {canSend && (

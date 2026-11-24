@@ -40,8 +40,11 @@ export const SIDEBAR_NAVIGATION: SidebarGroup[] = [
     title: 'Commerce',
     items: [
       { title: 'Cards', path: '/cards', icon: 'Layers', permission: PERMISSIONS.CARDS.EDIT },
+      // No permission gate: categories have no dedicated permission in constants/permissions.ts,
+      // matching the backend, which only checks hasRole('SUPER_ADMIN') — same convention as
+      // Audit Logs/Profile below (see the note at the top of this file).
+      { title: 'Categories', path: '/categories', icon: 'LayoutGrid' },
       { title: 'Menus', path: '/menus', icon: 'UtensilsCrossed', permission: PERMISSIONS.MENUS.EDIT },
-      { title: 'Categories', path: '/categories', icon: 'LayoutGrid', permission: PERMISSIONS.MENUS.EDIT },
       { title: 'Coupons', path: '/coupons', icon: 'Tag', permission: PERMISSIONS.COUPONS.EDIT },
       { title: 'Store Categories', path: '/store-categories', icon: 'LayoutGrid', permission: PERMISSIONS.STORES.EDIT },
       { title: 'Redemptions', path: '/redemptions', icon: 'Receipt' },

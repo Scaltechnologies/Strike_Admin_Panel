@@ -1,12 +1,7 @@
 // Shapes match `notification-service`'s NotificationLog entity + AdminNotificationController exactly
 // (admin-service's controller is a pure proxy — see MASTER_BACKEND_DOCUMENTATION.md section 2.8).
-//
-// PENDING BACKEND: `PUSH`/`IN_APP` channels, the `title` log field, device registry, in-app inbox
-// and template entities below have no backend implementation yet as of
-// 2026-07-29 — notification-service only has SmsService/EmailService and the plain NotificationLog
-// table (no device tokens, no in-app storage, no templates). These types describe the anticipated
-// contract the UI is built against so it can be wired up the moment those endpoints ship. See
-// `components/PendingBackendNotice.tsx` for how this is surfaced in the UI.
+// Covers SMS/Email logs plus the PUSH (FCM) and IN_APP channels, the push device registry, the
+// in-app inbox, and reusable notification templates.
 
 export type RecipientType = 'USER' | 'VENDOR' | 'ADMIN'
 export type NotificationChannel = 'SMS' | 'EMAIL' | 'PUSH' | 'IN_APP'
@@ -37,7 +32,7 @@ export interface NotificationLog {
   status: NotificationStatus | string
   errorDetail: string | null
   createdAt: string
-  /** PENDING BACKEND — push headline, separate from the body `message`. */
+  /** Push headline, separate from the body `message` — only populated for PUSH sends. */
   title?: string | null
 }
 
@@ -63,7 +58,6 @@ export interface NotificationStats {
 export interface NotificationListFilters {
   status?: NotificationStatus | string
   type?: NotificationType | string
-  /** PENDING BACKEND — `GET /api/admin/notifications` does not accept a `channel` param yet. */
   channel?: NotificationChannel | string
 }
 
@@ -100,10 +94,10 @@ export interface SendBulkNotificationResponse {
   total: number
 }
 
-/** A recipient segment for broadcast-style sends — PENDING BACKEND. */
+/** A recipient segment for broadcast-style sends. */
 export type BroadcastSegment = 'ALL_USERS' | 'ALL_VENDORS' | 'ALL_ADMINS'
 
-// ── Push notifications — PENDING BACKEND ─────────────────────────────────────
+// ── Push notifications ────────────────────────────────────────────────────────
 
 export type DevicePlatform = 'ANDROID' | 'IOS' | 'WEB'
 
@@ -144,7 +138,7 @@ export interface PushDeviceFilters {
   active?: boolean
 }
 
-/** Body for POST /api/admin/notifications/push/send (PENDING BACKEND). */
+/** Body for POST /api/admin/notifications/push/send. */
 export interface SendPushRequest {
   recipientId?: number
   recipientType?: RecipientType
@@ -155,7 +149,7 @@ export interface SendPushRequest {
   type?: NotificationType
 }
 
-/** Body for POST /api/admin/notifications/push/send/bulk (PENDING BACKEND). */
+/** Body for POST /api/admin/notifications/push/send/bulk. */
 export interface SendPushBulkRequest {
   recipients?: BulkRecipient[]
   segment?: BroadcastSegment
@@ -176,7 +170,7 @@ export interface SendPushBulkResponse {
   total: number
 }
 
-// ── In-app notifications — PENDING BACKEND ───────────────────────────────────
+// ── In-app notifications ─────────────────────────────────────────────────────
 
 export interface InAppNotification {
   id: number
@@ -212,7 +206,7 @@ export interface InAppFilters {
   isRead?: boolean
 }
 
-/** Body for POST /api/admin/notifications/inapp/send (PENDING BACKEND). */
+/** Body for POST /api/admin/notifications/inapp/send. */
 export interface SendInAppRequest {
   recipientId?: number
   recipientType?: RecipientType
@@ -223,7 +217,7 @@ export interface SendInAppRequest {
   type?: NotificationType
 }
 
-/** Body for POST /api/admin/notifications/inapp/send/bulk (PENDING BACKEND). */
+/** Body for POST /api/admin/notifications/inapp/send/bulk. */
 export interface SendInAppBulkRequest {
   recipients?: BulkRecipient[]
   segment?: BroadcastSegment
@@ -244,7 +238,7 @@ export interface SendInAppBulkResponse {
   total: number
 }
 
-// ── Notification templates — PENDING BACKEND ─────────────────────────────────
+// ── Notification templates ───────────────────────────────────────────────────
 
 export interface NotificationTemplate {
   id: number

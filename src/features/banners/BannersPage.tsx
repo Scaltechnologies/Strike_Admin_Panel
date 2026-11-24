@@ -96,7 +96,7 @@ export function BannersPage() {
               key={banner.id}
               banner={banner}
               onEdit={openEdit}
-              onToggle={(b) => toggle({ id: b.id, active: b.isActive })}
+              onToggle={(b) => toggle({ id: b.id, isActive: b.isActive })}
               onDelete={(b) => setDeleteConfirm(b.id)}
               isToggling={toggling}
             />

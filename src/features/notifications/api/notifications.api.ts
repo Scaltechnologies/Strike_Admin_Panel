@@ -20,7 +20,6 @@ export const notificationsApi = {
           size,
           status: filters.status || undefined,
           type: filters.type || undefined,
-          // PENDING BACKEND — `channel` isn't accepted by the list endpoint yet; sent for forward compat.
           channel: filters.channel || undefined,
         },
       })

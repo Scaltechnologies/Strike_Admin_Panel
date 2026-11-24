@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import { useCreateTemplate, useUpdateTemplate } from '../../hooks/useTemplates'
 import type { NotificationChannel, NotificationTemplate } from '../../types/notification.types'
 
-// PENDING BACKEND — anticipated contract for POST/PUT /api/admin/notifications/templates(/:id).
+// POST/PUT /api/admin/notifications/templates(/:id).
 const schema = z.object({
   name: z.string().min(1, 'Name is required').max(100, 'Max 100 characters'),
   code: z
