@@ -16,14 +16,24 @@ export function StoreManagerCard({ store }: StoreManagerCardProps) {
   const [nameInput, setNameInput] = useState(store.managerName ?? '')
   const [phoneInput, setPhoneInput] = useState(store.managerPhone ?? '')
 
+  const [phoneError, setPhoneError] = useState('')
+
   const { mutate: updateManager, isPending } = useUpdateStoreManager()
 
   function handleSave() {
+    const phone = normalizeMobile(phoneInput)
+    if (phoneInput.trim() && !phone) {
+      setPhoneError('Enter a valid 10-digit mobile number — the manager signs in with it.')
+      return
+    }
+    setPhoneError('')
     updateManager(
       {
         storeId: store.id,
-        managerName: nameInput || undefined,
-        managerPhone: phoneInput || undefined,
+        // Empty strings (not undefined) so clearing a field actually clears it server-side —
+        // undefined is dropped from the JSON body and the old value would stay.
+        managerName: nameInput.trim(),
+        managerPhone: phone ?? '',
       },
       {
         onSuccess: () => setEditing(false),
@@ -34,6 +44,7 @@ export function StoreManagerCard({ store }: StoreManagerCardProps) {
   function handleCancel() {
     setNameInput(store.managerName ?? '')
     setPhoneInput(store.managerPhone ?? '')
+    setPhoneError('')
     setEditing(false)
   }
 
@@ -112,16 +123,26 @@ export function StoreManagerCard({ store }: StoreManagerCardProps) {
             <input
               type="tel"
               value={phoneInput}
-              onChange={(e) => setPhoneInput(e.target.value)}
-              placeholder="e.g. +91 98765 43210"
+              onChange={(e) => { setPhoneInput(e.target.value); setPhoneError('') }}
+              placeholder="e.g. 98765 43210"
+              inputMode="tel"
               disabled={isPending}
+              aria-invalid={!!phoneError}
               className={cn(
-                'block w-full rounded-lg border border-border bg-card px-3 py-2 text-sm font-mono',
+                'block w-full rounded-lg border bg-card px-3 py-2 text-sm font-mono',
+                phoneError ? 'border-destructive' : 'border-border',
                 'placeholder:text-muted-foreground',
                 'focus:outline-none focus:ring-2 focus:ring-ring',
                 'disabled:opacity-60',
               )}
             />
+            {phoneError ? (
+              <p className="mt-1 text-xs text-destructive">{phoneError}</p>
+            ) : (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Leave empty to remove the manager — they'll lose access to the vendor app.
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-2 pt-1">
@@ -151,13 +172,30 @@ export function StoreManagerCard({ store }: StoreManagerCardProps) {
 
       {/* Info note */}
       <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
-        <p className="text-xs text-muted-foreground">
-          Manager details are for internal reference only. The vendor owns this store and manages
-          their own operations independently.
+        <p className="text-xs font-medium text-foreground">How the manager signs in</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          In the Strike Vendor app the manager enters this mobile number. The first time, they tap{' '}
+          <span className="font-medium text-foreground">Forgot PIN?</span>, verify the number by OTP and
+          choose their own 4-digit PIN. Managers can run day-to-day operations (redemptions,
+          Pay-at-Store, subscriptions, menu, timings) but can't see earnings, withdrawals or bank
+          details, or edit the store profile.
+        </p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">Number already owns a store?</span> That's fine —
+          they keep their existing PIN, and after entering it the app asks which store to open: their own
+          or this one.
         </p>
       </div>
     </div>
   )
+}
+
+/** Same normalisation as vendor-service: bare 10-digit Indian mobile, or null if invalid. */
+function normalizeMobile(raw: string): string | null {
+  let digits = raw.replace(/\D/g, '')
+  if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2)
+  else if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1)
+  return /^[6-9]\d{9}$/.test(digits) ? digits : null
 }
 
 function Row({

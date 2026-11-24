@@ -75,12 +75,21 @@ export function useUpdateStoreManager() {
       managerPhone?: string
     }) => storesApi.updateManager(storeId, { managerName, managerPhone }),
     meta: { suppressError: true },
-    onSuccess: () => {
-      toast.success('Store manager updated.')
+    onSuccess: (data) => {
+      // Set by admin-service when the manager's number also owns a store: sign-in will ask
+      // which store to open (same PIN for both) — worth telling the admin.
+      const notice = (data as { managerNotice?: string } | undefined)?.managerNotice
+      if (notice) {
+        toast.info('Store manager updated', { description: notice, duration: 12000 })
+      } else {
+        toast.success('Store manager updated.')
+      }
       void queryClient.invalidateQueries({ queryKey: STORE_QUERY_KEYS.all })
     },
-    onError: () => {
-      toast.error('Failed to update store manager.')
+    onError: (error: unknown) => {
+      // vendor-service explains what's wrong (invalid number, already managing another store).
+      const data = (error as { response?: { data?: { message?: string } } })?.response?.data
+      toast.error(data?.message ?? 'Failed to update store manager.')
     },
   })
 }
