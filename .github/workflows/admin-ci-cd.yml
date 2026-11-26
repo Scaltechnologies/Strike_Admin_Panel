@@ -44,11 +44,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Report-only for now: the codebase has pre-existing lint errors. Once they
-      # are fixed, delete `continue-on-error` so new lint errors block deploys.
+      # Lint errors block the deploy; warnings are reported but don't fail.
       - name: Lint
         run: npm run lint
-        continue-on-error: true
 
       # `npm run build` = `tsc -b && vite build`, so type errors fail here.
       - name: Type-check & build

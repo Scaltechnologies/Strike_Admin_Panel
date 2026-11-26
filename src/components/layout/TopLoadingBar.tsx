@@ -1,39 +1,40 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouterState } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
 
 export function TopLoadingBar() {
   const isLoading = useRouterState({ select: (s) => s.status === 'pending' })
-  const [visible, setVisible] = useState(false)
-  const [width, setWidth] = useState(0)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [visible, setVisible] = useState(isLoading)
+  const [width, setWidth] = useState(isLoading ? 10 : 0)
+  const [prevIsLoading, setPrevIsLoading] = useState(isLoading)
 
-  useEffect(() => {
+  // React's "adjust state when a prop changes" pattern: update during render
+  // instead of synchronously inside an effect (avoids an extra render pass).
+  if (isLoading !== prevIsLoading) {
+    setPrevIsLoading(isLoading)
     if (isLoading) {
       setVisible(true)
       setWidth(10)
-
-      // Fake progress: advance to ~85% while loading
-      intervalRef.current = setInterval(() => {
-        setWidth((w) => {
-          if (w >= 85) return w
-          return w + (85 - w) * 0.1
-        })
-      }, 120)
     } else {
-      if (intervalRef.current) clearInterval(intervalRef.current)
       setWidth(100)
-      timerRef.current = setTimeout(() => {
-        setVisible(false)
-        setWidth(0)
-      }, 300)
+    }
+  }
+
+  useEffect(() => {
+    if (isLoading) {
+      // Fake progress: advance to ~85% while loading
+      const interval = setInterval(() => {
+        setWidth((w) => (w >= 85 ? w : w + (85 - w) * 0.1))
+      }, 120)
+      return () => clearInterval(interval)
     }
 
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-      if (timerRef.current) clearTimeout(timerRef.current)
-    }
+    // Finished: let the bar reach 100%, then hide it
+    const timer = setTimeout(() => {
+      setVisible(false)
+      setWidth(0)
+    }, 300)
+    return () => clearTimeout(timer)
   }, [isLoading])
 
   if (!visible) return null

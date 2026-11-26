@@ -145,7 +145,8 @@ export function CouponTable({
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                c.isActive ? deactivate(c.id) : activate(c.id)
+                if (c.isActive) deactivate(c.id)
+                else activate(c.id)
               }}
               title={c.isActive ? 'Deactivate' : 'Activate'}
               className={cn(

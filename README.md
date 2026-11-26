@@ -78,7 +78,7 @@ export default defineConfig([
 
 `.github/workflows/admin-ci-cd.yml` handles everything:
 
-- **Pull request to `main`**: install, lint (report-only for now), type-check and build.
+- **Pull request to `main`**: install, lint, type-check and build. Any lint or type error fails the check.
 - **Push/merge to `main`**: the same checks, then the built `dist/` is copied over SSH to the
   Hostinger VPS and goes live at https://admin.strikeapp.in. The job then checks that the live
   site serves the new bundle.
