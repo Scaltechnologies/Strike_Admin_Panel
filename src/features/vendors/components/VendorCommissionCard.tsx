@@ -18,7 +18,7 @@ function formatCurrency(value: number) {
 }
 
 export function VendorCommissionCard({ vendor }: VendorCommissionCardProps) {
-  const canEdit = usePermission(PERMISSIONS.COMMISSION.EDIT)
+  const canEdit = usePermission(PERMISSIONS.VENDORS.EDIT)
   const [page, setPage] = useState(0)
   const [historyPage, setHistoryPage] = useState(0)
   const [showRateDialog, setShowRateDialog] = useState(false)

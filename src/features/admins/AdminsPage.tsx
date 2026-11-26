@@ -4,6 +4,7 @@ import { KeyRound, Pencil, Plus, Power, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/auth-store'
 import { ROLE_LABELS } from '@/constants/roles'
+import { SECTIONS } from '@/constants/sections'
 import { formatDateTime } from '@/utils/helpers/date'
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog'
 import { ErrorState } from '@/components/common/ErrorState'
@@ -11,6 +12,15 @@ import { useAdminList, useSetAdminActive } from './hooks/useAdmins'
 import { AdminForm } from './components/AdminForm'
 import { ResetPasswordForm } from './components/ResetPasswordForm'
 import type { AdminAccount } from './types/admin.types'
+
+/** Plain-language summary of an Admin's sections, e.g. 'Users, Vendors & Stores, Payments'. */
+function sectionSummary(a: AdminAccount): string {
+  const granted = new Set((a.permissions ?? '').split(',').map((p) => p.trim()))
+  const labels = SECTIONS.filter((s) => granted.has(s.code)).map((s) => s.label)
+  if (labels.length === 0) return 'No sections yet'
+  if (labels.length === SECTIONS.length) return 'All sections'
+  return labels.join(', ')
+}
 
 export function AdminsPage() {
   const currentUserId = useAuthStore((s) => s.user?.id)
@@ -53,7 +63,7 @@ export function AdminsPage() {
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-sm font-medium text-foreground">Admin</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">Every screen in the panel, except this Admins page.</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">Only the sections you tick for them, like Users or Payments.</p>
         </div>
       </div>
 
@@ -102,6 +112,11 @@ export function AdminsPage() {
                           )}
                         </div>
                         <p className="mt-0.5 truncate text-sm text-muted-foreground">{a.email}</p>
+                        {a.role === 'SUB_ADMIN' && (
+                          <p className="mt-0.5 line-clamp-2 text-xs text-foreground/80">
+                            <span className="text-muted-foreground">Access: </span>{sectionSummary(a)}
+                          </p>
+                        )}
                         <p className="mt-0.5 text-xs text-muted-foreground">
                           {a.lastLoginAt ? `Last sign-in ${formatDateTime(a.lastLoginAt)}` : 'Never signed in'}
                         </p>

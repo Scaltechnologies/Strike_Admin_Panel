@@ -2,7 +2,7 @@ import { useEffect, type ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/auth-store'
-import { hasFullAccess } from '@/constants/roles'
+import { ROLES } from '@/constants/roles'
 import type { Permission } from '@/constants/permissions'
 import { SkeletonTable } from './SkeletonLoader'
 import { EmptyState } from './EmptyState'
@@ -14,7 +14,7 @@ import { ErrorState } from './ErrorState'
 function hasPermission(permission: Permission): boolean {
   const user = useAuthStore.getState().user
   if (!user) return false
-  if (hasFullAccess(user.role)) return true
+  if (user.role === ROLES.SUPER_ADMIN) return true
   return user.permissions.includes(permission)
 }
 

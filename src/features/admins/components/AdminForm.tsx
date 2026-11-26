@@ -1,9 +1,20 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Eye, EyeOff, X } from 'lucide-react'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { SECTIONS } from '@/constants/sections'
 import { useCreateAdmin, useUpdateAdmin } from '../hooks/useAdmins'
 import type { AdminAccount, AdminAccountRole } from '../types/admin.types'
+import { SectionPicker } from './SectionPicker'
+
+const SECTION_CODES = new Set<string>(SECTIONS.map((s) => s.code))
+
+/** Section codes stored in an admin's permissions string. */
+function sectionsOf(admin: AdminAccount | null): string[] {
+  if (!admin?.permissions) return []
+  return admin.permissions.split(',').map((p) => p.trim()).filter((p) => SECTION_CODES.has(p))
+}
 
 interface AdminFormProps {
   open: boolean
@@ -18,7 +29,7 @@ const inputCls =
   'block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60'
 
 const ROLE_OPTIONS: { value: AdminAccountRole; label: string; description: string }[] = [
-  { value: 'SUB_ADMIN', label: 'Admin', description: 'Every screen, except managing admin logins.' },
+  { value: 'SUB_ADMIN', label: 'Admin', description: 'Only the sections you tick below.' },
   { value: 'SUPER_ADMIN', label: 'Super Admin', description: 'Everything, including adding and removing admins.' },
 ]
 
@@ -30,6 +41,7 @@ export function AdminForm({ open, onClose, editing, isSelf }: AdminFormProps) {
     phone: editing?.phone ?? '',
     password: '',
     role: (editing?.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : 'SUB_ADMIN') as AdminAccountRole,
+    sections: sectionsOf(editing),
   })
   const [showPassword, setShowPassword] = useState(false)
 
@@ -43,11 +55,16 @@ export function AdminForm({ open, onClose, editing, isSelf }: AdminFormProps) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (form.role === 'SUB_ADMIN' && form.sections.length === 0) {
+      toast.error('Tick at least one section this admin can access.')
+      return
+    }
     const base = {
       name: form.name.trim(),
       email: form.email.trim(),
       role: form.role,
       phone: form.phone.trim() || undefined,
+      sections: form.role === 'SUB_ADMIN' ? form.sections : undefined,
     }
     if (isEdit) {
       update({ id: editing.id, payload: base }, { onSuccess: onClose })
@@ -64,7 +81,7 @@ export function AdminForm({ open, onClose, editing, isSelf }: AdminFormProps) {
             className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden />
           <motion.aside initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 280 }}
-            className="fixed right-0 top-0 z-50 flex h-full w-full max-w-sm flex-col border-l border-border bg-card shadow-2xl"
+            className="fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col border-l border-border bg-card shadow-2xl"
             role="dialog" aria-modal="true" aria-labelledby="admin-form-title"
           >
             <div className="flex items-center justify-between border-b border-border px-5 py-4">
@@ -150,6 +167,10 @@ export function AdminForm({ open, onClose, editing, isSelf }: AdminFormProps) {
                     <p className="mt-1.5 text-xs text-muted-foreground">You can&apos;t change your own access level.</p>
                   )}
                 </fieldset>
+
+                {form.role === 'SUB_ADMIN' && (
+                  <SectionPicker value={form.sections} onChange={(next) => set('sections', next)} disabled={isPending} />
+                )}
               </div>
 
               <div className="mt-4 flex gap-2 border-t border-border pt-4">

@@ -17,9 +17,8 @@ export interface SidebarGroup {
 }
 
 // Every path here must correspond to an actual registered route in `src/routes/protected-routes.tsx`.
-// No permission constant is invented for items whose module has none defined in
-// `src/constants/permissions.ts` (Audit Logs, Profile) — they stay visible to any authenticated
-// admin, matching how the backend gates them (no dedicated permission check).
+// Each item's `permission` is the section (constants/sections.ts) that unlocks it; the backend
+// enforces the same sections. Items without one (Profile) are open to every admin.
 //
 // NOTE: Branches (`/branches`) is intentionally NOT listed here — the route, feature folder, and
 // backend integration all still exist, but Branches is out of scope for Version 1 and is hidden from
@@ -28,7 +27,7 @@ export const SIDEBAR_NAVIGATION: SidebarGroup[] = [
   {
     title: 'Overview',
     items: [
-      { title: 'Dashboard', path: '/dashboard', icon: 'LayoutDashboard' },
+      { title: 'Dashboard', path: '/dashboard', icon: 'LayoutDashboard', permission: PERMISSIONS.DASHBOARD.VIEW },
     ],
   },
   {
@@ -42,14 +41,11 @@ export const SIDEBAR_NAVIGATION: SidebarGroup[] = [
     title: 'Commerce',
     items: [
       { title: 'Cards', path: '/cards', icon: 'Layers', permission: PERMISSIONS.CARDS.EDIT },
-      // No permission gate: categories have no dedicated permission in constants/permissions.ts,
-      // matching the backend, which only checks hasRole('SUPER_ADMIN') — same convention as
-      // Audit Logs/Profile below (see the note at the top of this file).
-      { title: 'Categories', path: '/categories', icon: 'LayoutGrid' },
+      { title: 'Categories', path: '/categories', icon: 'LayoutGrid', permission: PERMISSIONS.CATEGORIES.EDIT },
       { title: 'Menus', path: '/menus', icon: 'UtensilsCrossed', permission: PERMISSIONS.MENUS.EDIT },
       { title: 'Coupons', path: '/coupons', icon: 'Tag', permission: PERMISSIONS.COUPONS.EDIT },
-      { title: 'Store Categories', path: '/store-categories', icon: 'LayoutGrid', permission: PERMISSIONS.STORES.EDIT },
-      { title: 'Redemptions', path: '/redemptions', icon: 'Receipt' },
+      { title: 'Store Categories', path: '/store-categories', icon: 'LayoutGrid', permission: PERMISSIONS.STORE_CATEGORIES.EDIT },
+      { title: 'Redemptions', path: '/redemptions', icon: 'Receipt', permission: PERMISSIONS.REDEMPTIONS.VIEW },
     ],
   },
   {
@@ -78,7 +74,7 @@ export const SIDEBAR_NAVIGATION: SidebarGroup[] = [
     items: [
       { title: 'Admins', path: '/admins', icon: 'ShieldCheck', superAdminOnly: true },
       { title: 'API Keys', path: '/api-keys', icon: 'Key', permission: PERMISSIONS.API_KEYS.EDIT },
-      { title: 'Audit Logs', path: '/audit-logs', icon: 'FileText' },
+      { title: 'Audit Logs', path: '/audit-logs', icon: 'FileText', permission: PERMISSIONS.AUDIT_LOGS.VIEW },
       { title: 'Settings', path: '/settings', icon: 'Settings', permission: PERMISSIONS.SETTINGS.EDIT },
       { title: 'Profile', path: '/profile', icon: 'User' },
     ],

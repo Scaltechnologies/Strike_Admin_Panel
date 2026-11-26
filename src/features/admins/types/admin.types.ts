@@ -11,6 +11,8 @@ export interface CreateAdminPayload {
   password: string
   role: AdminAccountRole
   phone?: string
+  /** Section codes for an Admin (SUB_ADMIN); ignored for Super Admin. */
+  sections?: string[]
 }
 
 export interface UpdateAdminPayload {
@@ -18,6 +20,7 @@ export interface UpdateAdminPayload {
   email: string
   role: AdminAccountRole
   phone?: string
+  sections?: string[]
 }
 
 export interface UpdateMyProfilePayload {

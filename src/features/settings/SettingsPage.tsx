@@ -255,7 +255,7 @@ function PaymentModeCard() {
 }
 
 function DefaultCommissionCard() {
-  const canEdit = usePermission(PERMISSIONS.COMMISSION.EDIT)
+  const canEdit = usePermission(PERMISSIONS.SETTINGS.EDIT)
   const [historyPage, setHistoryPage] = useState(0)
   const [showRateDialog, setShowRateDialog] = useState(false)
   const [rateInput, setRateInput] = useState('')

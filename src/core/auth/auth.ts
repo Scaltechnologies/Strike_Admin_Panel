@@ -1,7 +1,7 @@
 import { useAuthStore } from '@/store/auth-store'
 import type { AdminUser } from '@/types/auth/auth'
 import type { Role } from '@/constants/roles'
-import { ROLES, hasFullAccess } from '@/constants/roles'
+import { ROLES } from '@/constants/roles'
 
 export function getCurrentUser(): AdminUser | null {
   return useAuthStore.getState().user
@@ -18,21 +18,21 @@ export function isAuthenticated(): boolean {
 export function hasPermission(permission: string): boolean {
   const user = useAuthStore.getState().user
   if (!user) return false
-  if (hasFullAccess(user.role)) return true
+  if (user.role === ROLES.SUPER_ADMIN) return true
   return user.permissions.includes(permission)
 }
 
 export function hasAnyPermission(permissions: string[]): boolean {
   const user = useAuthStore.getState().user
   if (!user) return false
-  if (hasFullAccess(user.role)) return true
+  if (user.role === ROLES.SUPER_ADMIN) return true
   return permissions.some((p) => user.permissions.includes(p))
 }
 
 export function hasAllPermissions(permissions: string[]): boolean {
   const user = useAuthStore.getState().user
   if (!user) return false
-  if (hasFullAccess(user.role)) return true
+  if (user.role === ROLES.SUPER_ADMIN) return true
   return permissions.every((p) => user.permissions.includes(p))
 }
 

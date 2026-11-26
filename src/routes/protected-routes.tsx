@@ -4,6 +4,7 @@ import { createRoute, Outlet, redirect } from '@tanstack/react-router'
 import { rootRoute } from './route-config'
 import { AuthGuard } from '@/core/guards/AuthGuard'
 import { RoleGuard } from '@/core/guards/PermissionGuard'
+import { SectionGuard } from '@/core/guards/SectionGuard'
 import { ROLES } from '@/constants/roles'
 import { DashboardLayout } from '@/layouts/DashboardLayout'
 import { LoadingScreen } from '@/components/common/LoadingScreen'
@@ -77,7 +78,9 @@ export const protectedGroupRoute = createRoute({
     <AuthGuard>
       <DashboardLayout>
         <Suspense fallback={<LoadingScreen />}>
-          <Outlet />
+          <SectionGuard>
+            <Outlet />
+          </SectionGuard>
         </Suspense>
       </DashboardLayout>
     </AuthGuard>

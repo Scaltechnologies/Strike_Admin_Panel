@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { GitBranch, CheckCircle2, XCircle } from 'lucide-react'
 import { useAuthStore } from '@/store/auth-store'
-import { hasFullAccess } from '@/constants/roles'
+import { ROLES } from '@/constants/roles'
 import { cn } from '@/lib/utils'
 import { useBranchesList, useActiveBranches } from './hooks/useBranches'
 import { BranchTable } from './components/BranchTable'
@@ -46,7 +46,7 @@ function StatCard({ label, value, icon: Icon, color, isLoading }: StatCardProps)
 
 export function BranchesPage() {
   const { user } = useAuthStore()
-  const canManage = hasFullAccess(user?.role)
+  const canManage = user?.role === ROLES.SUPER_ADMIN
 
   const [page, setPage] = useState(0)
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null)

@@ -1,7 +1,7 @@
 export const ROLES = {
   /** Full control, including creating and managing other admin logins. */
   SUPER_ADMIN: 'SUPER_ADMIN',
-  /** Every admin screen except managing other admin logins. */
+  /** Only the sections a Super Admin ticks for them (see constants/sections.ts). */
   SUB_ADMIN: 'SUB_ADMIN',
 } as const
 
@@ -14,7 +14,3 @@ export const ROLE_LABELS: Record<string, string> = {
   MANAGER: 'Branch Manager',
 }
 
-/** Roles that can use every admin screen (backend: hasAnyRole('SUPER_ADMIN', 'SUB_ADMIN')). */
-export function hasFullAccess(role: string | undefined | null): boolean {
-  return role === ROLES.SUPER_ADMIN || role === ROLES.SUB_ADMIN
-}

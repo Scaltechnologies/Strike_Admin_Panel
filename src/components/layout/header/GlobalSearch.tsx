@@ -16,6 +16,9 @@ import {
 } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
 import { useUIStore } from '@/store/ui-store'
+import { useAuthStore } from '@/store/auth-store'
+import { ROLES } from '@/constants/roles'
+import { sectionForPath } from '@/constants/sections'
 import { cn } from '@/lib/utils'
 
 const NAV_GROUPS = [
@@ -73,6 +76,17 @@ export function GlobalSearch() {
 
   const open = useCallback(() => setSearchOpen(true), [setSearchOpen])
   const close = useCallback(() => setSearchOpen(false), [setSearchOpen])
+
+  // Only offer pages this admin can open (same section rules as the sidebar).
+  const user = useAuthStore((s) => s.user)
+  const visibleGroups = NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => {
+      if (!user || user.role === ROLES.SUPER_ADMIN) return true
+      const section = sectionForPath(item.path)
+      return !section || user.permissions.includes(section)
+    }),
+  })).filter((group) => group.items.length > 0)
 
   // Ctrl+K shortcut
   useEffect(() => {
@@ -137,7 +151,7 @@ export function GlobalSearch() {
             <CommandEmpty className="py-8 text-center text-sm text-muted-foreground">
               No results found.
             </CommandEmpty>
-            {NAV_GROUPS.map((group, i) => (
+            {visibleGroups.map((group, i) => (
               <span key={group.heading}>
                 {i > 0 && <CommandSeparator className="my-1 h-px bg-border" />}
                 <CommandGroup heading={group.heading}>

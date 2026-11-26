@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import type { Permission } from '@/constants/permissions'
 import { useAuthStore } from '@/store/auth-store'
 import { AccessDenied } from '@/components/common/AccessDenied'
+import { ROLES } from '@/constants/roles'
 
 interface PermissionGuardProps {
   children: ReactNode
@@ -12,9 +13,9 @@ interface PermissionGuardProps {
 export function PermissionGuard({ children, permission, fallback }: PermissionGuardProps) {
   const { user } = useAuthStore()
 
-  // SUPER_ADMIN has all permissions regardless of stored permissions array
+  // SUPER_ADMIN has every section; everyone else needs the section in their permissions
   const hasPermission =
-    user?.role === 'SUPER_ADMIN' || (user?.permissions.includes(permission) ?? false)
+    user?.role === ROLES.SUPER_ADMIN || (user?.permissions.includes(permission) ?? false)
 
   if (!hasPermission) {
     return fallback ? <>{fallback}</> : <AccessDenied />

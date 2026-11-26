@@ -1,61 +1,50 @@
+/**
+ * Permission names used across the panel, each mapped to the section that grants it.
+ * Access is per section (see constants/sections.ts): an admin with a section can view and
+ * edit everything in it. Super Admins have every section.
+ */
 export const PERMISSIONS = {
+  DASHBOARD: { VIEW: 'SEC_DASHBOARD' },
   USERS: {
-    VIEW: 'USER_VIEW',
-    EDIT: 'USER_EDIT',
-    DELETE: 'USER_DELETE',
-    NOTIFY: 'USER_NOTIFY',
+    VIEW: 'SEC_USERS',
+    EDIT: 'SEC_USERS',
+    DELETE: 'SEC_USERS',
+    NOTIFY: 'SEC_USERS',
   },
   VENDORS: {
-    VIEW: 'VENDOR_VIEW',
-    EDIT: 'VENDOR_EDIT',
-    APPROVE: 'VENDOR_APPROVE',
-    DISABLE: 'VENDOR_DISABLE',
+    VIEW: 'SEC_VENDORS',
+    EDIT: 'SEC_VENDORS',
+    APPROVE: 'SEC_VENDORS',
+    DISABLE: 'SEC_VENDORS',
   },
   STORES: {
-    VIEW: 'STORE_VIEW',
-    CREATE: 'STORE_CREATE',
-    EDIT: 'STORE_EDIT',
-    DELETE: 'STORE_DELETE',
+    VIEW: 'SEC_VENDORS',
+    CREATE: 'SEC_VENDORS',
+    EDIT: 'SEC_VENDORS',
+    DELETE: 'SEC_VENDORS',
   },
-  MENUS: {
-    EDIT: 'MENU_EDIT',
-  },
+  STORE_CATEGORIES: { EDIT: 'SEC_STORE_CATEGORIES' },
+  CATEGORIES: { EDIT: 'SEC_CATEGORIES' },
+  MENUS: { EDIT: 'SEC_MENUS' },
   CARDS: {
-    CREATE: 'CARD_CREATE',
-    EDIT: 'CARD_EDIT',
-    DELETE: 'CARD_DELETE',
+    CREATE: 'SEC_CARDS',
+    EDIT: 'SEC_CARDS',
+    DELETE: 'SEC_CARDS',
   },
   COUPONS: {
-    CREATE: 'COUPON_CREATE',
-    EDIT: 'COUPON_EDIT',
+    CREATE: 'SEC_COUPONS',
+    EDIT: 'SEC_COUPONS',
   },
-  PAYMENTS: {
-    VIEW: 'PAYMENT_VIEW',
-  },
-  WITHDRAWALS: {
-    APPROVE: 'WITHDRAW_APPROVE',
-  },
-  ANALYTICS: {
-    VIEW: 'ANALYTICS_VIEW',
-  },
-  REPORTS: {
-    EXPORT: 'REPORT_EXPORT',
-  },
-  SETTINGS: {
-    EDIT: 'SETTINGS_EDIT',
-  },
-  API_KEYS: {
-    EDIT: 'APIKEY_EDIT',
-  },
-  NOTIFICATIONS: {
-    SEND: 'NOTIFICATION_SEND',
-  },
-  BANNERS: {
-    MANAGE: 'BANNER_MANAGE',
-  },
-  COMMISSION: {
-    EDIT: 'COMMISSION_EDIT',
-  },
+  REDEMPTIONS: { VIEW: 'SEC_REDEMPTIONS' },
+  PAYMENTS: { VIEW: 'SEC_PAYMENTS' },
+  WITHDRAWALS: { APPROVE: 'SEC_WITHDRAWALS' },
+  ANALYTICS: { VIEW: 'SEC_ANALYTICS' },
+  REPORTS: { EXPORT: 'SEC_REPORTS' },
+  SETTINGS: { EDIT: 'SEC_SETTINGS' },
+  API_KEYS: { EDIT: 'SEC_API_KEYS' },
+  NOTIFICATIONS: { SEND: 'SEC_NOTIFICATIONS' },
+  BANNERS: { MANAGE: 'SEC_BANNERS' },
+  AUDIT_LOGS: { VIEW: 'SEC_AUDIT_LOGS' },
 } as const
 
 export type Permission = {
