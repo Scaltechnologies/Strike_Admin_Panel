@@ -73,3 +73,27 @@ export default defineConfig([
 ])
 
 ```
+
+## Deployment (CI/CD)
+
+`.github/workflows/admin-ci-cd.yml` handles everything:
+
+- **Pull request to `main`**: install, lint (report-only for now), type-check and build.
+- **Push/merge to `main`**: the same checks, then the built `dist/` is copied over SSH to the
+  Hostinger VPS and goes live at https://admin.strikeapp.in. The job then checks that the live
+  site serves the new bundle.
+- **Manual redeploy**: GitHub → Actions → *Admin Panel CI/CD* → *Run workflow*.
+
+The script on the server (`scripts/deploy-admin-remote.sh`) keeps the previous release in
+`<web-root>.prev` and restores it automatically if the deploy fails. `https://admin.strikeapp.in/version.txt`
+shows the commit that is live.
+
+**One-time setup** (Settings → Secrets and variables → Actions):
+
+| Name | Kind | Value |
+|---|---|---|
+| `VPS_HOST` | secret | same as in Strike_Backend |
+| `VPS_USER` | secret | same as in Strike_Backend |
+| `VPS_SSH_PRIVATE_KEY` | secret | same as in Strike_Backend |
+| `ADMIN_WEB_ROOT` | variable (optional) | nginx `root` for admin.strikeapp.in; found automatically if unset |
+| `VITE_API_BASE_URL` | variable (optional) | defaults to `https://api.strikeapp.in` |

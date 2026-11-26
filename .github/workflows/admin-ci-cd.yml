@@ -1,0 +1,152 @@
+name: Admin Panel CI/CD
+
+# - Every PR to main and every push to main: install, lint, type-check + build.
+# - Push to main (or a manual "Run workflow"): after a green build, deploy the
+#   exact dist/ that was just built to the Hostinger VPS that serves
+#   https://admin.strikeapp.in (same VPS + same SSH secrets as Strike_Backend's CD).
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '24'
+  # Production build config. These are baked into the public JS bundle, so they are
+  # not secrets. Override any of them under Settings -> Secrets and variables ->
+  # Actions -> Variables without editing this file.
+  VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://api.strikeapp.in' }}
+  VITE_APP_NAME: ${{ vars.VITE_APP_NAME || 'Strike Admin' }}
+  VITE_ENV: production
+  VITE_APP_VERSION: ${{ vars.VITE_APP_VERSION || '1.0.0' }}
+
+jobs:
+  build:
+    name: Lint, type-check & build
+    runs-on: ubuntu-latest
+    concurrency:
+      group: admin-ci-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Report-only for now: the codebase has pre-existing lint errors. Once they
+      # are fixed, delete `continue-on-error` so new lint errors block deploys.
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true
+
+      # `npm run build` = `tsc -b && vite build`, so type errors fail here.
+      - name: Type-check & build
+        run: npm run build
+
+      - name: Upload build output
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-dist
+          path: dist/
+          retention-days: 14
+          if-no-files-found: error
+
+  deploy:
+    name: Deploy to admin.strikeapp.in
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # Queue deploys instead of cancelling one mid-copy.
+    concurrency:
+      group: strike-admin-production-deploy
+      cancel-in-progress: false
+    environment:
+      name: production
+      url: https://admin.strikeapp.in
+    env:
+      PUBLIC_URL: https://admin.strikeapp.in
+      # Optional repo variable. If unset, the remote script finds the nginx `root`
+      # for admin.strikeapp.in in /etc/nginx/sites-enabled/ on its own.
+      ADMIN_WEB_ROOT: ${{ vars.ADMIN_WEB_ROOT }}
+    steps:
+      - name: Checkout (for the deploy script)
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts
+
+      - name: Download build output
+        uses: actions/download-artifact@v4
+        with:
+          name: admin-dist
+          path: dist
+
+      - name: Package build
+        run: |
+          set -euo pipefail
+          test -f dist/index.html || { echo "::error::dist/index.html missing"; exit 1; }
+          tar -czf admin-dist.tar.gz -C dist .
+          ls -lh admin-dist.tar.gz
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          set -euo pipefail
+          if [ -z "$SSH_PRIVATE_KEY" ] || [ -z "$VPS_HOST" ]; then
+            echo "::error::Missing secrets. Add VPS_HOST, VPS_USER and VPS_SSH_PRIVATE_KEY to this repo (same values as Strike_Backend)."
+            exit 1
+          fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          if ! KEYSCAN_STDERR=$(ssh-keyscan -H "$VPS_HOST" 2>&1 >> ~/.ssh/known_hosts); then
+            echo "::error::ssh-keyscan could not reach the VPS (network/DNS/firewall issue, not a key issue)."
+            echo "$KEYSCAN_STDERR"
+            exit 1
+          fi
+
+      - name: Upload & activate release
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          set -euo pipefail
+          SSH_OPTS="-i $HOME/.ssh/deploy_key -o StrictHostKeyChecking=yes"
+          REMOTE_TMP="/tmp/strike-admin-deploy-${GITHUB_SHA}"
+          ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" "mkdir -p '$REMOTE_TMP'"
+          scp $SSH_OPTS admin-dist.tar.gz scripts/deploy-admin-remote.sh "$VPS_USER@$VPS_HOST:$REMOTE_TMP/"
+          ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" \
+            "bash '$REMOTE_TMP/deploy-admin-remote.sh' '$REMOTE_TMP/admin-dist.tar.gz' '$GITHUB_SHA' '$ADMIN_WEB_ROOT'; rc=\$?; rm -rf '$REMOTE_TMP'; exit \$rc"
+
+      - name: Verify the live site serves the new build
+        run: |
+          set -euo pipefail
+          ENTRY=$(grep -oE '/assets/index-[A-Za-z0-9_-]+\.js' dist/index.html | head -1)
+          echo "Expecting entry bundle: $ENTRY"
+          for i in 1 2 3 4 5 6; do
+            if curl -fsS -H 'Cache-Control: no-cache' "$PUBLIC_URL/?v=$GITHUB_SHA" | grep -q "$ENTRY" \
+               && curl -fsS -o /dev/null "$PUBLIC_URL$ENTRY"; then
+              echo "OK: $PUBLIC_URL is serving commit $GITHUB_SHA"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::$PUBLIC_URL is not serving the new build. Check the deploy step log."
+          exit 1
+
+      - name: Clean up SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
