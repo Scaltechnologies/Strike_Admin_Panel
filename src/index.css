@@ -128,3 +128,209 @@
     outline-offset: 2px;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Strike brand loader (used by BrandLoader.tsx and the pre-React splash in
+   index.html — keep the two in sync). Bolt colours come from the logo.
+   ───────────────────────────────────────────────────────────────────────────── */
+:root {
+  --bolt-yellow: #ffc400;
+  --bolt-orange: #ff6a00;
+  --bolt-red: #e01a00;
+}
+
+.strike-loader {
+  --sl-size: 120px;
+  position: relative;
+  width: var(--sl-size);
+  height: var(--sl-size);
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+}
+.strike-loader > * { grid-area: 1 / 1; }
+
+/* Soft breathing glow behind the bolt */
+.sl-glow {
+  width: 70%;
+  height: 70%;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgb(255 106 0 / 0.55), rgb(224 26 0 / 0.15) 55%, transparent 72%);
+  filter: blur(14px);
+  animation: sl-breathe 1.8s ease-in-out infinite;
+  z-index: -1;
+}
+
+/* Spinning gradient ring (conic gradient cut into a thin ring with a mask) */
+.sl-ring {
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  background: conic-gradient(from 0deg, transparent 0deg, var(--bolt-yellow) 70deg, var(--bolt-orange) 150deg, var(--bolt-red) 230deg, transparent 300deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
+  animation: sl-spin 1.15s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite;
+}
+.sl-ring--outer {
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  border: 1px dashed rgb(255 106 0 / 0.28);
+  animation: sl-spin 9s linear infinite reverse;
+}
+
+/* A small spark travelling around the ring */
+.sl-orbit {
+  width: 100%;
+  height: 100%;
+  animation: sl-spin 2.4s linear infinite;
+}
+.sl-orbit::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  margin-left: -3.5px;
+  border-radius: 9999px;
+  background: #fff7d6;
+  box-shadow: 0 0 6px 2px var(--bolt-yellow), 0 0 14px 4px rgb(255 106 0 / 0.6);
+}
+
+/* The bolt itself: charges up and down, with a light sweep clipped to its shape */
+.sl-bolt {
+  position: relative;
+  width: 46%;
+  height: 46%;
+  animation: sl-charge 1.8s ease-in-out infinite;
+}
+.sl-bolt img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 14px rgb(224 26 0 / 0.35));
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.sl-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 0.9) 50%, transparent 65%);
+  background-size: 260% 100%;
+  -webkit-mask: url('/strike-bolt.png') center / contain no-repeat;
+  mask: url('/strike-bolt.png') center / contain no-repeat;
+  mix-blend-mode: soft-light;
+  animation: sl-sweep 1.8s ease-in-out infinite;
+}
+
+/* Indeterminate "charging" bar under the loader */
+.sl-bar {
+  position: relative;
+  width: 140px;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: rgb(255 106 0 / 0.14);
+}
+.sl-bar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--bolt-yellow), var(--bolt-orange), var(--bolt-red));
+  box-shadow: 0 0 10px rgb(255 106 0 / 0.7);
+  animation: sl-bar 1.3s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+/* Brand gradient text, e.g. the "Strike" wordmark */
+.text-bolt-gradient {
+  background: linear-gradient(100deg, var(--bolt-yellow), var(--bolt-orange) 45%, var(--bolt-red));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@keyframes sl-spin { to { transform: rotate(360deg); } }
+@keyframes sl-breathe {
+  0%, 100% { opacity: 0.55; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.12); }
+}
+@keyframes sl-charge {
+  0%, 100% { transform: translateY(1px) scale(0.96); }
+  50% { transform: translateY(-2px) scale(1.04); }
+}
+@keyframes sl-sweep {
+  0%, 25% { background-position: 130% 0; }
+  75%, 100% { background-position: -30% 0; }
+}
+@keyframes sl-bar {
+  0% { transform: translateX(-110%); }
+  100% { transform: translateX(250%); }
+}
+
+/* ── Sign-in page ──────────────────────────────────────────────────────────── */
+
+/* Slow drifting colour blobs behind the hero */
+.auth-aurora > span {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(70px);
+  opacity: 0.55;
+  will-change: transform;
+}
+.auth-aurora > span:nth-child(1) { width: 46%; aspect-ratio: 1; top: -12%; left: -10%; background: var(--bolt-red); animation: aurora-a 16s ease-in-out infinite; }
+.auth-aurora > span:nth-child(2) { width: 38%; aspect-ratio: 1; bottom: -14%; right: -8%; background: var(--bolt-orange); animation: aurora-b 19s ease-in-out infinite; }
+.auth-aurora > span:nth-child(3) { width: 26%; aspect-ratio: 1; top: 38%; left: 46%; background: var(--bolt-yellow); opacity: 0.28; animation: aurora-c 14s ease-in-out infinite; }
+
+@keyframes aurora-a { 50% { transform: translate(18%, 22%) scale(1.15); } }
+@keyframes aurora-b { 50% { transform: translate(-22%, -16%) scale(1.2); } }
+@keyframes aurora-c { 50% { transform: translate(-30%, 25%) scale(0.85); } }
+
+/* Faint grid that fades out towards the edges */
+.auth-grid {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+  mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+}
+
+/* Logo float on the hero */
+.auth-float { animation: auth-float 6s ease-in-out infinite; }
+@keyframes auth-float { 50% { transform: translateY(-10px) rotate(-2deg); } }
+
+/* Staggered fade-up entrance; set --d on each element for its delay */
+.fade-up {
+  opacity: 0;
+  animation: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: var(--d, 0ms);
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Light sweep across the primary button on hover */
+.btn-shine { position: relative; overflow: hidden; }
+.btn-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.35) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 0.7s ease;
+}
+.btn-shine:hover::after { transform: translateX(120%); }
+
+@media (prefers-reduced-motion: reduce) {
+  .sl-glow, .sl-ring, .sl-ring--outer, .sl-orbit, .sl-bolt, .sl-shine, .sl-bar::before,
+  .auth-aurora > span, .auth-float {
+    animation-duration: 0s !important;
+    animation-iteration-count: 1 !important;
+  }
+  .sl-ring { animation: sl-spin 2.5s linear infinite !important; }
+  .fade-up { animation-duration: 0.01ms; }
+}

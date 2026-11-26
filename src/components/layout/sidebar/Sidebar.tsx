@@ -1,8 +1,9 @@
 import { memo } from 'react'
 import { motion } from 'framer-motion'
-import { Zap, LogOut, Sun, Moon, User, Shield, ChevronLeft, ChevronRight } from 'lucide-react'
+import { LogOut, Sun, Moon, User, Shield, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
+import { StrikeLogo } from '@/components/brand/StrikeLogo'
 import { useAuthStore } from '@/store/auth-store'
 import { useUIStore } from '@/store/ui-store'
 import { useLogout } from '@/features/auth/hooks/useLogout'
@@ -61,9 +62,7 @@ export const Sidebar = memo(function Sidebar() {
 
       {/* Brand */}
       <div className={cn('flex h-16 shrink-0 items-center gap-3 border-b border-border', collapsed ? 'justify-center px-2' : 'px-5')}>
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary shadow-sm shadow-primary/30">
-          <Zap className="h-4 w-4 text-primary-foreground" strokeWidth={2.5} aria-hidden />
-        </div>
+        <StrikeLogo className="h-8 w-8 shrink-0" />
         {!collapsed && (
           <>
             <div className="min-w-0">

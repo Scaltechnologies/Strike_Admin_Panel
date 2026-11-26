@@ -77,7 +77,7 @@ export const protectedGroupRoute = createRoute({
   component: () => (
     <AuthGuard>
       <DashboardLayout>
-        <Suspense fallback={<LoadingScreen />}>
+        <Suspense fallback={<LoadingScreen variant="inline" />}>
           <SectionGuard>
             <Outlet />
           </SectionGuard>

@@ -1,12 +1,28 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { ArrowRight, Eye, EyeOff, Lock, Mail } from 'lucide-react'
 import { loginSchema, type LoginFormValues } from '@/validations/auth.schema'
 import { useLogin } from './hooks/useLogin'
-import { InputField } from '@/components/forms/InputField'
-import { CheckboxField } from '@/components/forms/CheckboxField'
+import { StrikeLogo } from '@/components/brand/StrikeLogo'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { cn } from '@/lib/utils'
+
+const delay = (ms: number) => ({ '--d': `${ms}ms` }) as React.CSSProperties
+
+const inputCls = cn(
+  'peer block h-12 w-full rounded-xl border border-border bg-card pl-11 text-sm text-foreground shadow-sm',
+  'placeholder:text-muted-foreground/70',
+  'transition-[border-color,box-shadow] duration-200',
+  'hover:border-foreground/20',
+  'focus:border-[#ff6a00] focus:outline-none focus:ring-4 focus:ring-[#ff6a00]/15',
+  'disabled:cursor-not-allowed disabled:opacity-60',
+)
+
+const errorCls = 'border-destructive hover:border-destructive focus:border-destructive focus:ring-destructive/15'
+
+const iconCls =
+  'pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors peer-focus:text-[#ff6a00]'
 
 export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -26,43 +42,48 @@ export function LoginPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/25">
-            <svg
-              className="h-5 w-5 text-primary-foreground"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2.5}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
-          <span className="text-lg font-semibold text-foreground">Strike Admin</span>
-        </div>
-
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          Sign in to your account
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Enter your credentials to access the admin panel
-        </p>
+    <div>
+      {/* Logo (the brand panel shows it on large screens) */}
+      <div className="fade-up mb-10 flex items-center gap-2.5 lg:hidden">
+        <StrikeLogo className="h-9 w-9" />
+        <span className="text-lg font-bold tracking-tight text-foreground">Strike</span>
+        <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+          Admin
+        </span>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
-        <InputField
-          label="Email address"
-          type="email"
-          autoComplete="email"
-          placeholder="admin@strike.com"
-          disabled={isPending}
-          error={errors.email?.message}
-          {...register('email')}
-        />
+      <div className="fade-up" style={delay(60)}>
+        <p className="mb-2 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-bolt-gradient">Admin panel</p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Welcome back</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Sign in with the email and password you were given.</p>
+      </div>
 
-        <div className="space-y-1.5">
+      <form onSubmit={handleSubmit(onSubmit)} noValidate className="mt-9 space-y-5">
+        <div className="fade-up space-y-1.5" style={delay(140)}>
+          <label htmlFor="email" className="block text-sm font-medium text-foreground">
+            Email
+          </label>
+          <div className="relative">
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              autoFocus
+              placeholder="you@company.com"
+              disabled={isPending}
+              aria-invalid={!!errors.email}
+              aria-describedby={errors.email ? 'email-error' : undefined}
+              className={cn(inputCls, 'pr-4', errors.email && errorCls)}
+              {...register('email')}
+            />
+            <Mail className={iconCls} aria-hidden />
+          </div>
+          {errors.email && (
+            <p id="email-error" role="alert" className="text-xs text-destructive">{errors.email.message}</p>
+          )}
+        </div>
+
+        <div className="fade-up space-y-1.5" style={delay(200)}>
           <label htmlFor="password" className="block text-sm font-medium text-foreground">
             Password
           </label>
@@ -71,67 +92,72 @@ export function LoginPage() {
               id="password"
               type={showPassword ? 'text' : 'password'}
               autoComplete="current-password"
-              placeholder="••••••••"
+              placeholder="Enter your password"
               disabled={isPending}
               aria-invalid={!!errors.password}
-              className={cn(
-                'block w-full rounded-lg border border-border bg-background px-3 py-2.5 pr-10 text-sm text-foreground',
-                'placeholder:text-muted-foreground',
-                'transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20',
-                'disabled:cursor-not-allowed disabled:opacity-50',
-                errors.password && 'border-destructive focus:border-destructive focus:ring-destructive/20',
-              )}
+              aria-describedby={errors.password ? 'password-error' : undefined}
+              className={cn(inputCls, 'pr-12', errors.password && errorCls)}
               {...register('password')}
             />
+            <Lock className={iconCls} aria-hidden />
             <button
               type="button"
-              tabIndex={-1}
               onClick={() => setShowPassword((v) => !v)}
-              className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+              className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff6a00]/40"
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
-              {showPassword ? (
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-                </svg>
-              ) : (
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              )}
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
           {errors.password && (
-            <p role="alert" className="text-xs text-destructive">{errors.password.message}</p>
+            <p id="password-error" role="alert" className="text-xs text-destructive">{errors.password.message}</p>
           )}
         </div>
 
-        <div className="flex items-center justify-between">
-          <CheckboxField label="Remember me" {...register('rememberMe')} />
+        <div className="fade-up flex items-center justify-between" style={delay(260)}>
+          <label htmlFor="rememberMe" className="flex cursor-pointer select-none items-center gap-2.5 text-sm text-foreground">
+            <input
+              id="rememberMe"
+              type="checkbox"
+              disabled={isPending}
+              className="h-4 w-4 cursor-pointer rounded border-border accent-[#ff6a00]"
+              {...register('rememberMe')}
+            />
+            Remember me
+          </label>
+          <span className="text-xs text-muted-foreground">Forgot it? Ask a Super Admin</span>
         </div>
 
-        <button
-          type="submit"
-          disabled={isPending}
-          className={cn(
-            'inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5',
-            'text-sm font-medium text-primary-foreground shadow-sm',
-            'transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
-            'disabled:cursor-not-allowed disabled:opacity-60',
-          )}
-        >
-          {isPending && <LoadingSpinner size="sm" />}
-          {isPending ? 'Signing in…' : 'Sign in'}
-        </button>
+        <div className="fade-up pt-1" style={delay(320)}>
+          <button
+            type="submit"
+            disabled={isPending}
+            className={cn(
+              'btn-shine group inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl px-4',
+              'bg-gradient-to-r from-[#ff8a00] via-[#ff5a00] to-[#d91c00] text-sm font-semibold text-white',
+              'shadow-lg shadow-[#ff5a00]/30 transition-[transform,box-shadow] duration-200',
+              'hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[#ff5a00]/40 active:translate-y-0',
+              'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#ff6a00]/30',
+              'disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0',
+            )}
+          >
+            {isPending ? (
+              <>
+                <LoadingSpinner size="sm" className="border-white/30 border-t-white" />
+                Signing in…
+              </>
+            ) : (
+              <>
+                Sign in
+                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" aria-hidden />
+              </>
+            )}
+          </button>
+        </div>
       </form>
 
-      <p className="text-center text-xs text-muted-foreground">
-        Forgot your password?{' '}
-        <span className="font-medium text-primary">
-          {/* TODO Phase 2: Implement forgot-password flow */}
-          Contact a Super Admin
-        </span>
+      <p className="fade-up mt-10 text-center text-xs text-muted-foreground" style={delay(420)}>
+        Only people given an admin login can sign in here.
       </p>
     </div>
   )

@@ -4,11 +4,54 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" sizes="96x96" href="/favicon.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="preload" as="image" href="/strike-bolt.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>strike-admin-panel</title>
+    <meta name="theme-color" content="#0b0c10" />
+    <title>Strike Admin</title>
+    <script>
+      // Apply the saved theme before anything paints, so the splash and the app don't flash.
+      try {
+        var t = localStorage.getItem('strike:theme')
+        var dark = t === 'dark' || ((!t || t === 'system') && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        if (dark) document.documentElement.classList.add('dark')
+      } catch (e) {}
+    </script>
+    <style>
+      /* Splash shown until React mounts (React replaces #root's contents). Mirrors .strike-loader in src/index.css. */
+      #splash { position: fixed; inset: 0; display: grid; place-items: center; background: #f6f7fa; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+      .dark #splash { background: #17181b; }
+      #splash .wrap { display: flex; flex-direction: column; align-items: center; gap: 24px; animation: sp-in .5s ease both; }
+      #splash .loader { position: relative; width: 120px; height: 120px; display: grid; place-items: center; }
+      #splash .loader > * { grid-area: 1 / 1; }
+      #splash .glow { width: 70%; height: 70%; border-radius: 50%; background: radial-gradient(circle, rgba(255,106,0,.55), rgba(224,26,0,.15) 55%, transparent 72%); filter: blur(14px); animation: sp-breathe 1.8s ease-in-out infinite; }
+      #splash .ring { width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(from 0deg, transparent 0deg, #ffc400 70deg, #ff6a00 150deg, #e01a00 230deg, transparent 300deg); -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px)); mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px)); animation: sp-spin 1.15s cubic-bezier(.55,.15,.45,.85) infinite; }
+      #splash .bolt { width: 46%; height: 46%; object-fit: contain; filter: drop-shadow(0 6px 14px rgba(224,26,0,.35)); animation: sp-charge 1.8s ease-in-out infinite; }
+      #splash .bar { position: relative; width: 140px; height: 3px; overflow: hidden; border-radius: 9999px; background: rgba(255,106,0,.14); }
+      #splash .bar::before { content: ''; position: absolute; inset: 0; width: 45%; border-radius: inherit; background: linear-gradient(90deg, #ffc400, #ff6a00, #e01a00); box-shadow: 0 0 10px rgba(255,106,0,.7); animation: sp-bar 1.3s cubic-bezier(.65,0,.35,1) infinite; }
+      #splash .name { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .25em; text-transform: uppercase; color: #5a6272; }
+      .dark #splash .name { color: #a0a4ad; }
+      @keyframes sp-spin { to { transform: rotate(360deg); } }
+      @keyframes sp-breathe { 0%, 100% { opacity: .55; transform: scale(.9); } 50% { opacity: 1; transform: scale(1.12); } }
+      @keyframes sp-charge { 0%, 100% { transform: translateY(1px) scale(.96); } 50% { transform: translateY(-2px) scale(1.04); } }
+      @keyframes sp-bar { 0% { transform: translateX(-110%); } 100% { transform: translateX(250%); } }
+      @keyframes sp-in { from { opacity: 0; transform: scale(.96); } }
+      @media (prefers-reduced-motion: reduce) { #splash * { animation-duration: 0s !important; } #splash .ring { animation: sp-spin 2.5s linear infinite !important; } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="splash" role="status" aria-label="Loading Strike Admin">
+        <div class="wrap">
+          <div class="loader">
+            <div class="glow"></div>
+            <div class="ring"></div>
+            <img class="bolt" src="/strike-bolt.png" alt="" />
+          </div>
+          <div class="bar"></div>
+          <p class="name">Strike Admin</p>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

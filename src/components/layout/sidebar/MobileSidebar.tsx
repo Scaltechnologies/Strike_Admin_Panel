@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Zap, LogOut, Shield, User } from 'lucide-react'
+import { X, LogOut, Shield, User } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
 import { useUIStore } from '@/store/ui-store'
 import { useAuthStore } from '@/store/auth-store'
@@ -12,6 +12,7 @@ import type { Role } from '@/constants/roles'
 import { APP_ROUTES } from '@/constants/routes/app-routes'
 import env from '@/config/env'
 import { cn } from '@/lib/utils'
+import { StrikeLogo } from '@/components/brand/StrikeLogo'
 
 export function MobileSidebar() {
   const { mobileSidebarOpen, setMobileSidebarOpen } = useUIStore()
@@ -56,9 +57,7 @@ export function MobileSidebar() {
             {/* Header */}
             <div className="flex h-16 shrink-0 items-center justify-between border-b border-border px-4">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shadow-md shadow-primary/30">
-                  <Zap className="h-4 w-4 text-primary-foreground" strokeWidth={2.5} aria-hidden />
-                </div>
+                <StrikeLogo className="h-8 w-8 shrink-0" />
                 <div>
                   <p className="text-sm font-bold tracking-tight text-foreground">Strike Admin</p>
                   <p className="text-[10px] text-muted-foreground">Management Console</p>
