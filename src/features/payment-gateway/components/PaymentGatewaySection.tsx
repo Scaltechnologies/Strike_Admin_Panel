@@ -3,7 +3,7 @@ import { CreditCard, ShieldAlert, RefreshCw, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDateTime } from '@/utils/helpers/date'
 import { useAuthStore } from '@/store/auth-store'
-import { ROLES } from '@/constants/roles'
+import { hasFullAccess } from '@/constants/roles'
 import { AccessDenied } from '@/components/common/AccessDenied'
 import { SwitchField } from '@/components/forms/SwitchField'
 import { usePaymentGatewayConfig, useUpdatePaymentGatewayConfig } from '../hooks/usePaymentGateway'
@@ -24,7 +24,7 @@ interface FormState {
 
 export function PaymentGatewaySection() {
   const { user } = useAuthStore()
-  const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN
+  const canManage = hasFullAccess(user?.role)
 
   const { data: config, isLoading, refetch } = usePaymentGatewayConfig(PROVIDER)
 
@@ -62,8 +62,8 @@ export function PaymentGatewaySection() {
         </div>
       </div>
 
-      {!isSuperAdmin ? (
-        <AccessDenied message="Only Super Admins can view or edit payment gateway credentials." />
+      {!canManage ? (
+        <AccessDenied message="Only Super Admins and Admins can view or edit payment gateway credentials." />
       ) : isLoading ? (
         <div className="space-y-3 p-5">
           <div className="h-9 w-full animate-pulse rounded-lg bg-muted" />

@@ -5,6 +5,8 @@ export interface SidebarItem {
   path: string
   icon: string
   permission?: string
+  /** Shown only to SUPER_ADMIN (e.g. managing admin logins). */
+  superAdminOnly?: boolean
   badge?: number | string
   children?: SidebarItem[]
 }
@@ -74,6 +76,7 @@ export const SIDEBAR_NAVIGATION: SidebarGroup[] = [
   {
     title: 'System',
     items: [
+      { title: 'Admins', path: '/admins', icon: 'ShieldCheck', superAdminOnly: true },
       { title: 'API Keys', path: '/api-keys', icon: 'Key', permission: PERMISSIONS.API_KEYS.EDIT },
       { title: 'Audit Logs', path: '/audit-logs', icon: 'FileText' },
       { title: 'Settings', path: '/settings', icon: 'Settings', permission: PERMISSIONS.SETTINGS.EDIT },

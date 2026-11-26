@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { GitBranch, CheckCircle2, XCircle } from 'lucide-react'
 import { useAuthStore } from '@/store/auth-store'
-import { ROLES } from '@/constants/roles'
+import { hasFullAccess } from '@/constants/roles'
 import { cn } from '@/lib/utils'
 import { useBranchesList, useActiveBranches } from './hooks/useBranches'
 import { BranchTable } from './components/BranchTable'
@@ -46,7 +46,7 @@ function StatCard({ label, value, icon: Icon, color, isLoading }: StatCardProps)
 
 export function BranchesPage() {
   const { user } = useAuthStore()
-  const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN
+  const canManage = hasFullAccess(user?.role)
 
   const [page, setPage] = useState(0)
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null)
@@ -71,7 +71,7 @@ export function BranchesPage() {
             Manage operational branches and their assigned managers.
           </p>
         </div>
-        {isSuperAdmin && (
+        {canManage && (
           <button
             onClick={() => setShowCreateForm(true)}
             className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"

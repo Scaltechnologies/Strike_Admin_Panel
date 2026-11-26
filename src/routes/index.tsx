@@ -26,6 +26,7 @@ import {
   auditLogsRoute,
   apiKeysRoute,
   profileRoute,
+  adminsRoute,
 } from './protected-routes'
 
 const routeTree = rootRoute.addChildren([
@@ -52,6 +53,7 @@ const routeTree = rootRoute.addChildren([
     auditLogsRoute,
     apiKeysRoute,
     profileRoute,
+    adminsRoute,
   ]),
   unauthorizedRoute,
 ])

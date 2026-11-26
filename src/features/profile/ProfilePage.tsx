@@ -9,6 +9,7 @@ import { ROLE_LABELS } from '@/constants/roles'
 import axiosInstance from '@/api/axios'
 import { ENDPOINTS } from '@/constants/api/endpoints'
 import type { Role } from '@/constants/roles'
+import { AccountDetailsCard } from './AccountDetailsCard'
 
 const INPUT_CLS =
   'block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60'
@@ -132,6 +133,9 @@ export function ProfilePage() {
 
         {/* Change password */}
         <div className="lg:col-span-2">
+          <div className="mb-6">
+            <AccountDetailsCard />
+          </div>
           <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
             <div className="mb-5 flex items-center gap-2.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">

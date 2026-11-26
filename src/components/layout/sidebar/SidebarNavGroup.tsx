@@ -1,6 +1,6 @@
 import { memo, useId, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
-import { hasPermission } from '@/core/auth/auth'
+import { hasPermission, isSuperAdmin } from '@/core/auth/auth'
 import { SidebarNavItem } from './SidebarNavItem'
 import { cn } from '@/lib/utils'
 import type { SidebarGroup } from '@/core/navigation/sidebar'
@@ -17,7 +17,8 @@ export const SidebarNavGroup = memo(function SidebarNavGroup({ group, collapsed,
   const listId = useId()
 
   const visibleItems = group.items.filter(
-    (item) => !item.permission || hasPermission(item.permission),
+    (item) =>
+      (!item.superAdminOnly || isSuperAdmin()) && (!item.permission || hasPermission(item.permission)),
   )
 
   if (visibleItems.length === 0) return null

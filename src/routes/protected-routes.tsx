@@ -3,6 +3,8 @@ import { lazy, Suspense } from 'react'
 import { createRoute, Outlet, redirect } from '@tanstack/react-router'
 import { rootRoute } from './route-config'
 import { AuthGuard } from '@/core/guards/AuthGuard'
+import { RoleGuard } from '@/core/guards/PermissionGuard'
+import { ROLES } from '@/constants/roles'
 import { DashboardLayout } from '@/layouts/DashboardLayout'
 import { LoadingScreen } from '@/components/common/LoadingScreen'
 import { APP_ROUTES } from '@/constants/routes/app-routes'
@@ -209,6 +211,24 @@ export const apiKeysRoute = createRoute({
   getParentRoute: () => protectedGroupRoute,
   path: '/api-keys',
   component: ApiKeysPage,
+})
+
+const AdminsPage = lazy(() =>
+  import('@/features/admins/AdminsPage').then((m) => ({ default: m.AdminsPage })),
+)
+
+function AdminsRouteComponent() {
+  return (
+    <RoleGuard roles={[ROLES.SUPER_ADMIN]}>
+      <AdminsPage />
+    </RoleGuard>
+  )
+}
+
+export const adminsRoute = createRoute({
+  getParentRoute: () => protectedGroupRoute,
+  path: '/admins',
+  component: AdminsRouteComponent,
 })
 
 export const profileRoute = createRoute({

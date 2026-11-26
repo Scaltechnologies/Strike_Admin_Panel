@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { MapPin, Phone, Mail, Ruler, CheckCircle2, XCircle, Edit2, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/auth-store'
-import { ROLES } from '@/constants/roles'
+import { hasFullAccess } from '@/constants/roles'
 import { useActivateBranch, useDeactivateBranch } from '../hooks/useBranches'
 import { BranchForm } from './BranchForm'
 import type { Branch } from '../types/branch.types'
@@ -36,7 +36,7 @@ interface BranchProfileCardProps {
 
 export function BranchProfileCard({ branch, isLoading }: BranchProfileCardProps) {
   const { user } = useAuthStore()
-  const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN
+  const canManage = hasFullAccess(user?.role)
   const [showEditForm, setShowEditForm] = useState(false)
 
   const { mutate: activate, isPending: activating } = useActivateBranch()
@@ -81,7 +81,7 @@ export function BranchProfileCard({ branch, isLoading }: BranchProfileCardProps)
           {branch.isActive ? 'Active' : 'Inactive'}
         </span>
 
-        {isSuperAdmin && (
+        {canManage && (
           <div className="flex items-center gap-2">
             <button
               onClick={() =>

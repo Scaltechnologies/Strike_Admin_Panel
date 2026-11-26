@@ -13,6 +13,7 @@ export const ENDPOINTS = {
       BY_ID: (id: string) => `/api/admin/auth/admins/${id}`,
       ACTIVATE: (id: string) => `/api/admin/auth/admins/${id}/activate`,
       DEACTIVATE: (id: string) => `/api/admin/auth/admins/${id}/deactivate`,
+      PASSWORD: (id: string) => `/api/admin/auth/admins/${id}/password`,
     },
   },
   USERS: {
