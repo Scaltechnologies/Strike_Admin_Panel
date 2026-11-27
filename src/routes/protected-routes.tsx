@@ -10,6 +10,7 @@ import { DashboardLayout } from '@/layouts/DashboardLayout'
 import { LoadingScreen } from '@/components/common/LoadingScreen'
 import { APP_ROUTES } from '@/constants/routes/app-routes'
 import { isVendorTab } from '@/features/vendors/utils/vendor-tabs'
+import { isUserTab } from '@/features/users/utils/user-meta'
 
 const DashboardPage = lazy(() =>
   import('@/features/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })),
@@ -118,6 +119,23 @@ export const vendorsRoute = createRoute({
   getParentRoute: () => protectedGroupRoute,
   path: '/vendors',
   component: VendorsPage,
+})
+
+const UserDashboardPage = lazy(() =>
+  import('@/features/users/UserDashboardPage').then((m) => ({ default: m.UserDashboardPage })),
+)
+
+function UserDashboardRouteComponent() {
+  const { userId } = userDashboardRoute.useParams()
+  const { tab } = userDashboardRoute.useSearch()
+  return <UserDashboardPage key={userId} userId={Number(userId)} tab={tab} />
+}
+
+export const userDashboardRoute = createRoute({
+  getParentRoute: () => protectedGroupRoute,
+  path: '/users/$userId',
+  validateSearch: (search: Record<string, unknown>) => ({ tab: isUserTab(search.tab) ? search.tab : undefined }),
+  component: UserDashboardRouteComponent,
 })
 
 const VendorDashboardPage = lazy(() =>

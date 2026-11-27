@@ -1,5 +1,5 @@
 import { format, parseISO } from 'date-fns'
-import { Activity, AlertTriangle, ShieldCheck, Store, UserCog, Users, type LucideIcon } from 'lucide-react'
+import { Activity, AlertTriangle, ShieldCheck, Store, UserCog, UserRound, Users, type LucideIcon } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { cn } from '@/lib/utils'
 import type { AuditActorType, AuditStats } from '../types/audit-log.types'
@@ -71,18 +71,19 @@ export function AuditOverview({ stats, loading, activeActorType, onActorType, on
   const timeline = (stats?.timeline ?? []).map((b) => ({ bucket: b.bucket, ok: b.total - b.failed, failed: b.failed }))
   const unit = stats?.bucketUnit ?? 'hour'
   const byType: Record<AuditActorType, number | undefined> = {
-    ADMIN: stats?.admins, STORE_OWNER: stats?.storeOwners, STORE_MANAGER: stats?.storeManagers,
+    ADMIN: stats?.admins, STORE_OWNER: stats?.storeOwners, STORE_MANAGER: stats?.storeManagers, CUSTOMER: stats?.customers,
   }
-  const typeIcon: Record<AuditActorType, LucideIcon> = { ADMIN: ShieldCheck, STORE_OWNER: Store, STORE_MANAGER: UserCog }
+  const typeIcon: Record<AuditActorType, LucideIcon> = { ADMIN: ShieldCheck, STORE_OWNER: Store, STORE_MANAGER: UserCog, CUSTOMER: UserRound }
   const typeTone: Record<AuditActorType, string> = {
     ADMIN: 'bg-violet-100 text-violet-600 dark:bg-violet-400/10 dark:text-violet-300',
     STORE_OWNER: 'bg-orange-100 text-orange-600 dark:bg-orange-400/10 dark:text-orange-300',
     STORE_MANAGER: 'bg-sky-100 text-sky-600 dark:bg-sky-400/10 dark:text-sky-300',
+    CUSTOMER: 'bg-pink-100 text-pink-600 dark:bg-pink-400/10 dark:text-pink-300',
   }
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 2xl:grid-cols-7">
         <StatCard icon={Activity} label="Total actions" value={stats?.total} loading={loading}
           tone="bg-gradient-to-br from-[#ffc400] via-[#ff6a00] to-[#e01a00] text-white shadow-md shadow-orange-500/30"
           onClick={() => onActorType(undefined)} />

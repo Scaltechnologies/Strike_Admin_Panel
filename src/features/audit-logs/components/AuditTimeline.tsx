@@ -3,7 +3,7 @@ import { AlertTriangle, ChevronRight, Globe, Smartphone } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { AuditLogResponse } from '../types/audit-log.types'
 import {
-  actorDisplayName, actorMeta, describeDevice, happenedAt, initials, isSecurityAction, roleLabel, summaryOf,
+  actorDisplayName, actorMeta, describeDevice, happenedAt, initials, isSecurityAction, roleLabel, sourceLabel, summaryOf,
 } from '../utils/audit-display'
 
 interface AuditTimelineProps {
@@ -110,8 +110,8 @@ export function AuditTimeline({ logs, loading, selectedId, onSelect }: AuditTime
                         )}
                         {log.source && (
                           <span className="inline-flex items-center gap-1">
-                            {log.source === 'VENDOR_APP' ? <Smartphone className="h-3 w-3" aria-hidden /> : <Globe className="h-3 w-3" aria-hidden />}
-                            {log.source === 'VENDOR_APP' ? 'Vendor app' : log.source === 'SYSTEM' ? 'System' : 'Admin panel'}
+                            {log.source === 'VENDOR_APP' || log.source === 'CUSTOMER_APP' ? <Smartphone className="h-3 w-3" aria-hidden /> : <Globe className="h-3 w-3" aria-hidden />}
+                            {sourceLabel(log.source)}
                           </span>
                         )}
                         {log.ipAddress && <span className="font-mono">{log.ipAddress}</span>}

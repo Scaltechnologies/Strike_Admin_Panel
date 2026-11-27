@@ -1,6 +1,6 @@
-export type AuditActorType = 'ADMIN' | 'STORE_OWNER' | 'STORE_MANAGER'
+export type AuditActorType = 'ADMIN' | 'STORE_OWNER' | 'STORE_MANAGER' | 'CUSTOMER'
 export type AuditOutcome = 'SUCCESS' | 'FAILED'
-export type AuditSource = 'ADMIN_PANEL' | 'VENDOR_APP' | 'SYSTEM'
+export type AuditSource = 'ADMIN_PANEL' | 'VENDOR_APP' | 'CUSTOMER_APP' | 'SYSTEM'
 
 export interface AuditLogResponse {
   id: number
@@ -64,6 +64,7 @@ export interface AuditStats {
   admins: number
   storeOwners: number
   storeManagers: number
+  customers?: number
   failedSignIns: number
   activePeople: number
   topActions: { action: string; count: number }[]

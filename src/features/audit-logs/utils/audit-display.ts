@@ -1,6 +1,6 @@
 import { isValid } from 'date-fns'
 import { parseServerDate } from '@/utils/helpers/date'
-import { ShieldCheck, Store, UserCog, Bot, type LucideIcon } from 'lucide-react'
+import { ShieldCheck, Store, UserCog, UserRound, Bot, type LucideIcon } from 'lucide-react'
 import type { AuditActorType, AuditLogResponse } from '../types/audit-log.types'
 
 export interface ActorMeta {
@@ -31,6 +31,12 @@ const ACTOR_META: Record<AuditActorType | 'SYSTEM', ActorMeta> = {
     tone: 'bg-sky-100 text-sky-700 ring-sky-200 dark:bg-sky-400/10 dark:text-sky-300 dark:ring-sky-400/20',
     dot: 'bg-sky-500',
   },
+  CUSTOMER: {
+    label: 'Customer',
+    icon: UserRound,
+    tone: 'bg-pink-100 text-pink-700 ring-pink-200 dark:bg-pink-400/10 dark:text-pink-300 dark:ring-pink-400/20',
+    dot: 'bg-pink-500',
+  },
   SYSTEM: {
     label: 'System',
     icon: Bot,
@@ -48,6 +54,7 @@ export const ACTOR_TYPES: { value: AuditActorType; label: string }[] = [
   { value: 'ADMIN', label: 'Admins' },
   { value: 'STORE_OWNER', label: 'Store owners' },
   { value: 'STORE_MANAGER', label: 'Store managers' },
+  { value: 'CUSTOMER', label: 'Customers' },
 ]
 
 const ROLE_LABELS: Record<string, string> = {
@@ -92,7 +99,7 @@ export function summaryOf(log: AuditLogResponse): string {
   return log.summary?.trim() || humanize(log.action)
 }
 
-/** "Chrome on Windows", "Vendor app on Android", … from a User-Agent header. */
+/** "Chrome on Windows", "Mobile app on Android", … from a User-Agent header. */
 export function describeDevice(ua: string | null | undefined): string {
   if (!ua) return 'Unknown device'
   const s = ua.toLowerCase()
@@ -102,7 +109,7 @@ export function describeDevice(ua: string | null | undefined): string {
     : s.includes('mac os') || s.includes('macintosh') ? 'macOS'
     : s.includes('linux') ? 'Linux'
     : null
-  if (/okhttp|dart|expo|reactnative|react-native|cfnetwork/.test(s)) return `Vendor app${os ? ` on ${os}` : ''}`
+  if (/okhttp|dart|expo|reactnative|react-native|cfnetwork/.test(s)) return `Mobile app${os ? ` on ${os}` : ''}`
   const browser = s.includes('edg/') ? 'Edge'
     : s.includes('opr/') || s.includes('opera') ? 'Opera'
     : s.includes('chrome/') ? 'Chrome'
@@ -136,4 +143,14 @@ export function prettyJson(text: string | null | undefined): string | null {
 /** True for actions that are about signing in or account security. */
 export function isSecurityAction(action: string): boolean {
   return /LOGIN|PASSWORD|PIN|EMAIL_CHANGED|SECRET|API_KEY/i.test(action)
+}
+
+/** Where an action came from, in plain words. */
+export function sourceLabel(source: string | null | undefined): string {
+  switch (source) {
+    case 'VENDOR_APP': return 'Vendor app'
+    case 'CUSTOMER_APP': return 'Strike app'
+    case 'SYSTEM': return 'System'
+    default: return 'Admin panel'
+  }
 }

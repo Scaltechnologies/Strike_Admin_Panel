@@ -13,6 +13,7 @@ export interface UserProfile {
   email: string | null
   mobileNumber: string
   profilePicUrl: string | null
+  gender?: string | null
   latitude: number | null
   longitude: number | null
   lastLocationAt: string | null

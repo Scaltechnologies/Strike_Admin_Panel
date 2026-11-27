@@ -57,7 +57,7 @@ export function AuditFiltersBar({ filters, search, onSearch, onChange, onReset, 
   if (filters.storeId != null) chips.push({ key: 'store', label: `Store #${filters.storeId}`, clear: { storeId: undefined } })
   if (filters.action) chips.push({ key: 'action', label: `Action: ${humanize(filters.action)}`, clear: { action: undefined } })
   if (filters.source) {
-    chips.push({ key: 'source', label: filters.source === 'VENDOR_APP' ? 'From the vendor app' : 'From the admin panel', clear: { source: undefined } })
+    chips.push({ key: 'source', label: `From the ${filters.source === 'VENDOR_APP' ? 'vendor app' : filters.source === 'CUSTOMER_APP' ? 'Strike app' : 'admin panel'}`, clear: { source: undefined } })
   }
 
   const filtered = chips.length > 0 || !!filters.actorType || !!filters.outcome || !!search || filters.range !== '7d'
@@ -103,9 +103,10 @@ export function AuditFiltersBar({ filters, search, onSearch, onChange, onReset, 
         </select>
         <select aria-label="Where" className={selectCls} value={filters.source ?? ''}
           onChange={(e) => onChange({ source: (e.target.value || undefined) as AuditFilters['source'] })}>
-          <option value="">Admin panel & vendor app</option>
+          <option value="">Anywhere</option>
           <option value="ADMIN_PANEL">Admin panel</option>
           <option value="VENDOR_APP">Vendor app</option>
+          <option value="CUSTOMER_APP">Strike app (customers)</option>
         </select>
         {chips.map((c) => (
           <span key={c.key} className="inline-flex items-center gap-1 rounded-full bg-primary/10 py-1 pl-3 pr-1 text-xs font-medium text-primary">

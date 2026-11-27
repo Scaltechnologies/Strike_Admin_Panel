@@ -8,7 +8,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import type { AuditLogResponse } from '../types/audit-log.types'
 import {
-  METHOD_TONE, actorDisplayName, actorMeta, describeDevice, happenedAt, humanize, initials, prettyJson, roleLabel, summaryOf,
+  METHOD_TONE, actorDisplayName, actorMeta, describeDevice, happenedAt, humanize, initials, prettyJson, roleLabel, sourceLabel, summaryOf,
 } from '../utils/audit-display'
 
 interface AuditDetailDrawerProps {
@@ -197,8 +197,8 @@ function DrawerBody({ log, onClose, onFilterActor, onFilterEntity }: Required<Om
           <dl className="divide-y divide-border rounded-xl border border-border px-3">
             <Row label="From">
               <span className="inline-flex items-center gap-1.5">
-                {log.source === 'VENDOR_APP' ? <Smartphone className="h-3.5 w-3.5" /> : log.source === 'SYSTEM' ? <Monitor className="h-3.5 w-3.5" /> : <Globe className="h-3.5 w-3.5" />}
-                {log.source === 'VENDOR_APP' ? 'Vendor app' : log.source === 'SYSTEM' ? 'System (automatic)' : 'Admin panel'}
+                {log.source === 'VENDOR_APP' || log.source === 'CUSTOMER_APP' ? <Smartphone className="h-3.5 w-3.5" /> : log.source === 'SYSTEM' ? <Monitor className="h-3.5 w-3.5" /> : <Globe className="h-3.5 w-3.5" />}
+                {log.source === 'SYSTEM' ? 'System (automatic)' : sourceLabel(log.source)}
               </span>
             </Row>
             {log.ipAddress && <Row label="IP address" mono>{log.ipAddress}</Row>}
