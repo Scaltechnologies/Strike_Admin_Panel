@@ -9,6 +9,7 @@ import { ROLES } from '@/constants/roles'
 import { DashboardLayout } from '@/layouts/DashboardLayout'
 import { LoadingScreen } from '@/components/common/LoadingScreen'
 import { APP_ROUTES } from '@/constants/routes/app-routes'
+import { isVendorTab } from '@/features/vendors/utils/vendor-tabs'
 
 const DashboardPage = lazy(() =>
   import('@/features/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })),
@@ -117,6 +118,24 @@ export const vendorsRoute = createRoute({
   getParentRoute: () => protectedGroupRoute,
   path: '/vendors',
   component: VendorsPage,
+})
+
+const VendorDashboardPage = lazy(() =>
+  import('@/features/vendors/VendorDashboardPage').then((m) => ({ default: m.VendorDashboardPage })),
+)
+
+function VendorDashboardRouteComponent() {
+  const { vendorId } = vendorDashboardRoute.useParams()
+  const { tab } = vendorDashboardRoute.useSearch()
+  // key: a fresh page (scroll, tabs, dialogs) when switching between vendors
+  return <VendorDashboardPage key={vendorId} vendorId={Number(vendorId)} tab={tab} />
+}
+
+export const vendorDashboardRoute = createRoute({
+  getParentRoute: () => protectedGroupRoute,
+  path: '/vendors/$vendorId',
+  validateSearch: (search: Record<string, unknown>) => ({ tab: isVendorTab(search.tab) ? search.tab : undefined }),
+  component: VendorDashboardRouteComponent,
 })
 
 export const branchesRoute = createRoute({
