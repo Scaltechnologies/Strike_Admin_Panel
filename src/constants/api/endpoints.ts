@@ -179,6 +179,9 @@ export const ENDPOINTS = {
   },
   AUDIT_LOGS: {
     BASE: '/api/admin/audit-logs',
+    STATS: '/api/admin/audit-logs/stats',
+    FACETS: '/api/admin/audit-logs/facets',
+    EXPORT: '/api/admin/audit-logs/export',
     BY_ID: (id: string) => `/api/admin/audit-logs/${id}`,
     BY_ACTOR: (actorId: string) => `/api/admin/audit-logs/actor/${actorId}`,
     BY_ENTITY: (type: string, id: string) => `/api/admin/audit-logs/entity/${type}/${id}`,
