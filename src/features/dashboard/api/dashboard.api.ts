@@ -1,6 +1,6 @@
 import axiosInstance from '@/api/axios'
 import { ENDPOINTS } from '@/constants/api/endpoints'
-import type { DashboardData, AnalyticsRevenueData } from '../types/dashboard.types'
+import type { AnalyticsPaymentData, AnalyticsRevenueData, DashboardData } from '../types/dashboard.types'
 
 export const dashboardApi = {
   getDashboard(): Promise<DashboardData> {
@@ -8,8 +8,10 @@ export const dashboardApi = {
   },
 
   getRevenueAnalytics(): Promise<AnalyticsRevenueData> {
-    return axiosInstance
-      .get<AnalyticsRevenueData>(ENDPOINTS.ANALYTICS.REVENUE)
-      .then((r) => r.data)
+    return axiosInstance.get<AnalyticsRevenueData>(ENDPOINTS.ANALYTICS.REVENUE).then((r) => r.data)
+  },
+
+  getPaymentAnalytics(): Promise<AnalyticsPaymentData> {
+    return axiosInstance.get<AnalyticsPaymentData>(ENDPOINTS.ANALYTICS.PAYMENTS).then((r) => r.data)
   },
 }

@@ -1,72 +1,81 @@
-import { RefreshCw, AlertCircle } from 'lucide-react'
-import { useDashboard, useRevenueAnalytics } from './hooks/useDashboard'
-import { WelcomeSection } from './components/WelcomeSection'
-import { KPICards } from './components/KPICards'
-import { PendingActionsWidget } from './components/PendingActionsWidget'
-import { RecentVendorsWidget } from './components/RecentVendorsWidget'
-import { TopVendorsWidget } from './components/TopVendorsWidget'
-import { RevenueChart } from '@/components/charts/RevenueChart'
-import { VendorStatusChart } from '@/components/charts/VendorStatusChart'
+import { motion } from 'framer-motion'
+import { AlertCircle, RefreshCw } from 'lucide-react'
+import { hasPermission } from '@/core/auth/auth'
 import { cn } from '@/lib/utils'
+import { useDashboard, usePaymentAnalytics, useRevenueAnalytics } from './hooks/useDashboard'
+import { DashboardHero } from './components/DashboardHero'
+import { KpiGrid } from './components/KpiGrid'
+import { RevenueTrendCard } from './components/RevenueTrendCard'
+import { VendorMixCard } from './components/VendorMixCard'
+import { PaymentHealthCard } from './components/PaymentHealthCard'
+import { TopVendorsCard } from './components/TopVendorsCard'
+import { ActionCenterCard } from './components/ActionCenterCard'
+import { LiveActivityCard } from './components/LiveActivityCard'
+import { RecentSignupsCard } from './components/RecentSignupsCard'
+import { staggerContainer, toNumber } from './utils/dashboard-format'
 
 export function DashboardPage() {
-  const {
-    data: dashboard,
-    isLoading,
-    isError,
-    refetch,
-    isFetching,
-  } = useDashboard()
+  const dashboard = useDashboard()
+  const revenue = useRevenueAnalytics()
+  const payments = usePaymentAnalytics()
+  const data = dashboard.data
+  const canSeeActivity = hasPermission('SEC_AUDIT_LOGS')
 
-  const { data: revenueData, isLoading: revenueLoading } = useRevenueAnalytics()
+  const refreshAll = () => {
+    void dashboard.refetch()
+    void revenue.refetch()
+    void payments.refetch()
+  }
+  const refreshing = dashboard.isFetching || revenue.isFetching || payments.isFetching
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6">
-      {/* Welcome */}
-      <WelcomeSection />
+    <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-5 p-4 sm:p-6">
+      <DashboardHero
+        todayRevenue={data?.revenue ? toNumber(data.revenue.today) : undefined}
+        todayPayments={data?.stats?.todayPayments != null ? toNumber(data.stats.todayPayments) : undefined}
+        pendingVendors={toNumber(data?.pendingActions?.pendingVendors ?? data?.stats?.vendors?.pending)}
+        pendingWithdrawals={toNumber(data?.pendingActions?.pendingWithdrawals)}
+        updatedAt={dashboard.dataUpdatedAt}
+        refreshing={refreshing}
+        onRefresh={refreshAll}
+      />
 
-      {/* Error banner */}
-      {isError && !isLoading && (
-        <div className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3">
+      {dashboard.isError && !dashboard.isLoading && (
+        <div className="flex items-center gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3">
           <AlertCircle className="h-4 w-4 shrink-0 text-destructive" aria-hidden />
-          <p className="flex-1 text-sm text-destructive">
-            Failed to load dashboard data. Some metrics may be unavailable.
-          </p>
-          <button
-            onClick={() => void refetch()}
-            disabled={isFetching}
-            className={cn(
-              'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-destructive',
-              'border border-destructive/30 transition-colors hover:bg-destructive/10',
-              'disabled:opacity-50',
-            )}
-          >
-            <RefreshCw className={cn('h-3 w-3', isFetching && 'animate-spin')} aria-hidden />
-            Retry
+          <p className="flex-1 text-sm text-destructive">Some dashboard figures couldn&apos;t be loaded.</p>
+          <button type="button" onClick={refreshAll} disabled={refreshing}
+            className="flex items-center gap-1.5 rounded-lg border border-destructive/30 px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50">
+            <RefreshCw className={cn('h-3 w-3', refreshing && 'animate-spin')} aria-hidden />
+            Try again
           </button>
         </div>
       )}
 
-      {/* KPI cards */}
-      <KPICards data={dashboard} isLoading={isLoading} />
+      <KpiGrid data={data} monthly={revenue.data?.monthly} loading={dashboard.isLoading} />
 
-      {/* Charts row */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <RevenueChart data={revenueData?.monthly} isLoading={revenueLoading} />
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+        <div className="xl:col-span-2">
+          <RevenueTrendCard monthly={revenue.data?.monthly} loading={revenue.isLoading} />
         </div>
-        <div>
-          <VendorStatusChart data={dashboard?.stats?.vendors} isLoading={isLoading} />
-        </div>
+        <VendorMixCard vendors={data?.stats?.vendors} loading={dashboard.isLoading} />
       </div>
 
-      {/* Widgets row */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <PendingActionsWidget data={dashboard} isLoading={isLoading} />
-        <RecentVendorsWidget data={dashboard} isLoading={isLoading} />
-        <TopVendorsWidget data={dashboard} isLoading={isLoading} />
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <ActionCenterCard data={data} loading={dashboard.isLoading} />
+        <PaymentHealthCard data={payments.data} loading={payments.isLoading} />
+        <TopVendorsCard vendors={data?.topVendors} loading={dashboard.isLoading} />
       </div>
-    </div>
+
+      <div className={cn('grid grid-cols-1 gap-5', canSeeActivity && 'xl:grid-cols-3')}>
+        {canSeeActivity && (
+          <div className="xl:col-span-2">
+            <LiveActivityCard />
+          </div>
+        )}
+        <RecentSignupsCard vendors={data?.recentVendorRegistrations} loading={dashboard.isLoading} />
+      </div>
+    </motion.div>
   )
 }
 
