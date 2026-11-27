@@ -5,6 +5,9 @@
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+  /* Popovers (menus, dialogs, tooltips, the notification panel) use the card surface. */
+  --color-popover: var(--card);
+  --color-popover-foreground: var(--card-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);

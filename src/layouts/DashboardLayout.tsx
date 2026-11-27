@@ -3,6 +3,7 @@ import { Sidebar } from '@/components/layout/sidebar/Sidebar'
 import { MobileSidebar } from '@/components/layout/sidebar/MobileSidebar'
 import { Header } from '@/components/layout/header/Header'
 import { TopLoadingBar } from '@/components/layout/TopLoadingBar'
+import { AlertsWatcher } from '@/features/alerts/AlertsWatcher'
 
 interface DashboardLayoutProps {
   children: ReactNode
@@ -12,6 +13,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <TopLoadingBar />
+      <AlertsWatcher />
       <Sidebar />
       <MobileSidebar />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">

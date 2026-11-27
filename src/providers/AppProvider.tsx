@@ -14,6 +14,8 @@ export function AppProvider({ children }: AppProviderProps) {
         <Toaster
           richColors
           position="top-right"
+          // Below the header, so pop-ups never cover the notification bell.
+          offset={{ top: 64, right: 16 }}
           toastOptions={{ duration: 4_000 }}
           expand
         />
