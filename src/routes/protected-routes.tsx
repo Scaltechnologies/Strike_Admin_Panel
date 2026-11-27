@@ -12,6 +12,7 @@ import { APP_ROUTES } from '@/constants/routes/app-routes'
 import { isVendorTab } from '@/features/vendors/utils/vendor-tabs'
 import { isUserTab } from '@/features/users/utils/user-meta'
 import { isMenusTab } from '@/features/menus/utils/menu-tabs'
+import { isRedemptionsTab } from '@/features/redemptions/utils/redemption-tabs'
 
 const DashboardPage = lazy(() =>
   import('@/features/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })),
@@ -196,10 +197,31 @@ export const cardDetailRoute = createRoute({
   component: CardDetailRouteComponent,
 })
 
+function RedemptionsRouteComponent() {
+  const { tab } = redemptionsRoute.useSearch()
+  return <RedemptionsPage tab={tab} />
+}
+
 export const redemptionsRoute = createRoute({
   getParentRoute: () => protectedGroupRoute,
   path: '/redemptions',
-  component: RedemptionsPage,
+  validateSearch: (search: Record<string, unknown>) => ({ tab: isRedemptionsTab(search.tab) ? search.tab : undefined }),
+  component: RedemptionsRouteComponent,
+})
+
+const RedemptionDetailPage = lazy(() =>
+  import('@/features/redemptions/RedemptionDetailPage').then((m) => ({ default: m.RedemptionDetailPage })),
+)
+
+function RedemptionDetailRouteComponent() {
+  const { redemptionId } = redemptionDetailRoute.useParams()
+  return <RedemptionDetailPage key={redemptionId} redemptionId={Number(redemptionId)} />
+}
+
+export const redemptionDetailRoute = createRoute({
+  getParentRoute: () => protectedGroupRoute,
+  path: '/redemptions/$redemptionId',
+  component: RedemptionDetailRouteComponent,
 })
 
 export const couponsRoute = createRoute({
