@@ -3,6 +3,7 @@ import { StatusBadge } from '@/components/common/StatusBadge'
 import { formatDate, formatDateTime } from '@/utils/helpers/date'
 import { formatCurrency } from '@/utils/helpers/format'
 import { cn } from '@/lib/utils'
+import { readPage } from '@/utils/helpers/page'
 import type { ApiWrappedPage, UserSubscription, UserTransaction, UserRedemption } from '../types/user.types'
 
 // ── Subscriptions ────────────────────────────────────────────────────────────
@@ -20,8 +21,7 @@ export function UserSubscriptionsTable({
   page,
   onPageChange,
 }: UserSubscriptionsTableProps) {
-  const rows = data?.data.content ?? []
-  const totalPages = data?.data.totalPages ?? 0
+  const { content: rows, totalPages } = readPage<UserSubscription>(data)
 
   return (
     <SubTableShell
@@ -90,8 +90,8 @@ export function UserTransactionsTable({
   page,
   onPageChange,
 }: UserTransactionsTableProps) {
-  const rows = data?.data.content ?? []
-  const totalPages = data?.data.totalPages ?? 0
+  // The ledger returns its page directly, not wrapped in { data: … } like the other services.
+  const { content: rows, totalPages } = readPage<UserTransaction>(data)
 
   return (
     <SubTableShell
@@ -161,8 +161,7 @@ export function UserRedemptionsTable({
   page,
   onPageChange,
 }: UserRedemptionsTableProps) {
-  const rows = data?.data.content ?? []
-  const totalPages = data?.data.totalPages ?? 0
+  const { content: rows, totalPages } = readPage<UserRedemption>(data)
 
   return (
     <SubTableShell

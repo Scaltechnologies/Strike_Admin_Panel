@@ -3,6 +3,8 @@ import { useNavigate } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import { CreditCard, HandCoins, LayoutDashboard, Route, ScrollText, ShoppingBag, UserRound, type LucideIcon } from 'lucide-react'
 import { ErrorState } from '@/components/common/ErrorState'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
+import { TabError } from '@/components/common/TabError'
 import { PermissionGuard } from '@/core/guards/PermissionGuard'
 import { PERMISSIONS } from '@/constants/permissions'
 import { cn } from '@/lib/utils'
@@ -71,6 +73,8 @@ export function UserDashboardPage({ userId, tab = 'overview' }: { userId: number
         </nav>
 
         <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+          {/* One failing tab shows its own error instead of blanking the whole page */}
+          <ErrorBoundary key={tab} fallback={<TabError />}>
           {isOverview && (
             <div className="flex flex-col gap-5">
               <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
@@ -117,6 +121,7 @@ export function UserDashboardPage({ userId, tab = 'overview' }: { userId: number
             <UserJourney userId={userId} mobile={mobile} purchases={purchases.data} redemptions={redemptions.data}
               loading={purchases.isLoading || redemptions.isLoading} limit={150} />
           )}
+          </ErrorBoundary>
         </motion.div>
       </div>
     </PermissionGuard>

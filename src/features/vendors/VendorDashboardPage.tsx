@@ -7,6 +7,8 @@ import {
 } from 'lucide-react'
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog'
 import { ErrorState } from '@/components/common/ErrorState'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
+import { TabError } from '@/components/common/TabError'
 import { PermissionGuard } from '@/core/guards/PermissionGuard'
 import { PERMISSIONS } from '@/constants/permissions'
 import { hasPermission } from '@/core/auth/auth'
@@ -124,6 +126,8 @@ export function VendorDashboardPage({ vendorId, tab = 'overview' }: { vendorId: 
 
         {/* Tab content */}
         <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+          {/* One failing tab shows its own error instead of blanking the whole page */}
+          <ErrorBoundary key={tab} fallback={<TabError />}>
           {tab === 'overview' && (
             <div className="flex flex-col gap-5">
               <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
@@ -207,6 +211,7 @@ export function VendorDashboardPage({ vendorId, tab = 'overview' }: { vendorId: 
           )}
 
           {tab === 'activity' && vendor && <VendorActivity vendor={vendor} />}
+          </ErrorBoundary>
         </motion.div>
       </div>
 

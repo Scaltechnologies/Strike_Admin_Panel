@@ -6,6 +6,7 @@ import { HandCoins, Route, RotateCcw, ShieldCheck, ShoppingBag, Smartphone, XCir
 import { cn } from '@/lib/utils'
 import { hasPermission } from '@/core/auth/auth'
 import { parseServerDate } from '@/utils/helpers/date'
+import { readPage } from '@/utils/helpers/page'
 import { auditLogsApi } from '@/features/audit-logs/api/audit-logs.api'
 import { summaryOf } from '@/features/audit-logs/utils/audit-display'
 import { Panel, Skeleton } from '@/features/dashboard/components/dashboard-ui'
@@ -75,7 +76,7 @@ export function UserJourney({ userId, mobile, purchases, redemptions, loading, l
         })
       }
     }
-    for (const r of redemptions?.data?.content ?? []) {
+    for (const r of readPage<UserRedemption>(redemptions).content) {
       const at = parseServerDate(r.createdAt)
       if (!isValid(at)) continue
       const ok = r.status === 'COMPLETED'
