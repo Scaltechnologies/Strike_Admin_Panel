@@ -180,6 +180,21 @@ export const cardsRoute = createRoute({
   component: CardsPage,
 })
 
+const CardDetailPage = lazy(() =>
+  import('@/features/cards/CardDetailPage').then((m) => ({ default: m.CardDetailPage })),
+)
+
+function CardDetailRouteComponent() {
+  const { cardId } = cardDetailRoute.useParams()
+  return <CardDetailPage key={cardId} cardId={Number(cardId)} />
+}
+
+export const cardDetailRoute = createRoute({
+  getParentRoute: () => protectedGroupRoute,
+  path: '/cards/$cardId',
+  component: CardDetailRouteComponent,
+})
+
 export const redemptionsRoute = createRoute({
   getParentRoute: () => protectedGroupRoute,
   path: '/redemptions',

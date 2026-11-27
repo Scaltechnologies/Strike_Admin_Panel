@@ -334,3 +334,28 @@
   .sl-ring { animation: sl-spin 2.5s linear infinite !important; }
   .fade-up { animation-duration: 0.01ms; }
 }
+
+/* ── Strike membership card visual ─────────────────────────────────────────── */
+.strike-card { transform-style: preserve-3d; }
+.strike-card-face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.strike-card-back { transform: rotateY(180deg); }
+/* A light band that sweeps across the card now and then */
+.strike-card-sheen::after {
+  content: '';
+  position: absolute;
+  inset: -40% -60%;
+  background: linear-gradient(105deg, transparent 42%, rgb(255 255 255 / 0.32) 50%, transparent 58%);
+  transform: translateX(-70%);
+  animation: card-sheen 6s ease-in-out infinite;
+  animation-delay: var(--sheen-delay, 0s);
+  pointer-events: none;
+}
+@keyframes card-sheen { 0%, 62% { transform: translateX(-70%); } 82%, 100% { transform: translateX(70%); } }
+/* Rainbow foil used on the hologram sticker */
+.strike-card-holo {
+  background: conic-gradient(from 0deg, #ff6a00, #ffd400, #2ee59d, #3bb2ff, #b06bff, #ff4d8d, #ff6a00);
+  animation: sl-spin 8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .strike-card-sheen::after, .strike-card-holo { animation: none !important; }
+}
