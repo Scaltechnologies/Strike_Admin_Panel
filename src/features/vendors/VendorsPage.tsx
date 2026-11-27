@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import {
-  BadgeCheck, ChevronLeft, ChevronRight, Clock, LayoutGrid, List, RefreshCw, Search, ShieldQuestion, Store, X,
+  BadgeCheck, ChevronLeft, ChevronRight, Clock, FileSpreadsheet, LayoutGrid, List, RefreshCw, Search, ShieldQuestion, Store, UserPlus, X,
   type LucideIcon,
 } from 'lucide-react'
 import { ErrorState } from '@/components/common/ErrorState'
 import { PermissionGuard } from '@/core/guards/PermissionGuard'
 import { PERMISSIONS } from '@/constants/permissions'
 import { cn } from '@/lib/utils'
+import { hasPermission } from '@/core/auth/auth'
+import { AddVendorDialog } from '@/features/onboarding/components/AddVendorDialog'
 import { useVendors } from './hooks/useVendors'
 import { useVendorCounts, useVendorSales } from './api/vendor-insights.api'
 import { VendorTable } from './components/VendorTable'
@@ -56,6 +58,8 @@ export function VendorsPage() {
   const [page, setPage] = useState(0)
   const [filters, setFilters] = useState<VendorFilters>(EMPTY_FILTERS)
   const [searchInput, setSearchInput] = useState('')
+  const [adding, setAdding] = useState(false)
+  const canOnboard = hasPermission('SEC_VENDORS')
   const [view, setView] = useState<View>(() => (localStorage.getItem(VIEW_KEY) === 'table' ? 'table' : 'grid'))
 
   useEffect(() => {
@@ -111,6 +115,18 @@ export function VendorsPage() {
                 <p className="mt-1 max-w-lg text-sm text-white/60">
                   Every restaurant and store on Strike. Open a vendor to see their full dashboard.
                 </p>
+                {canOnboard && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => setAdding(true)}
+                      className="btn-shine flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#ff8a00] to-[#e01a00] px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-600/30 transition-transform hover:-translate-y-0.5">
+                      <UserPlus className="h-4 w-4" /> Add vendor
+                    </button>
+                    <Link to="/vendors/import"
+                      className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/[0.08] px-4 py-2 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/[0.15]">
+                      <FileSpreadsheet className="h-4 w-4" /> Bulk upload
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -225,6 +241,7 @@ export function VendorsPage() {
             </div>
           </div>
         )}
+        <AddVendorDialog open={adding} onOpenChange={setAdding} />
       </div>
     </PermissionGuard>
   )

@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import {
   ArrowLeft, ArrowUpRight, CalendarClock, CalendarDays, CheckCircle2, Clock, Gift, HandCoins, IndianRupee, Layers, PieChart as PieIcon,
-  Receipt, RefreshCw, ShoppingBag, Store, Tag, TrendingUp, UserRound, Users, UtensilsCrossed, Wallet, type LucideIcon,
+  Loader2, PauseCircle, Pencil, PlayCircle, Receipt, RefreshCw, ShoppingBag, Store, Tag, TrendingUp, UserRound, Users, UtensilsCrossed, Wallet, type LucideIcon,
 } from 'lucide-react'
 import { Bar, CartesianGrid, Cell, ComposedChart, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { ErrorState } from '@/components/common/ErrorState'
@@ -18,6 +18,9 @@ import { formatInrFull, formatInrShort } from '@/features/vendors/utils/vendor-m
 import { UserAvatar } from '@/features/users/components/UserAvatar'
 import { useCardInsights, type CardInsights } from './api/card-insights.api'
 import { StrikeCardVisual } from './components/StrikeCardVisual'
+import { CardFormDialog } from '@/features/onboarding/components/CardFormDialog'
+import { useSaveCard } from '@/features/onboarding/onboarding.api'
+import { useStoreMenu } from '@/features/menus/hooks/useMenus'
 import { bonusPercent, cardTheme, HOLDER_STATUS, validityLabel } from './utils/card-meta'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -77,6 +80,34 @@ function BackLink() {
 
 // ── Hero ─────────────────────────────────────────────────────────────────────
 
+/** Edit the card, or stop / restart selling it — on the vendor's behalf. */
+function CardAdminActions({ data }: { data: CardInsights }) {
+  const card = data.card
+  const [editing, setEditing] = useState(false)
+  const save = useSaveCard()
+  const menu = useStoreMenu(editing && card.storeId != null ? card.storeId : null)
+  const categories = (menu.data ?? []).filter((c) => (c.items?.length ?? 0) > 0).map((c) => ({ id: c.id, name: c.name }))
+  const btn = 'flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold transition-colors'
+  return (
+    <span className="ml-auto flex flex-wrap gap-1.5">
+      <button type="button" onClick={() => setEditing(true)} className={cn(btn, 'bg-white/10 text-white hover:bg-white/20')}>
+        <Pencil className="h-3 w-3" /> Edit card
+      </button>
+      <button type="button" disabled={save.isPending} onClick={() => save.mutate({ cardId: card.id, card: { isActive: !card.isActive } })}
+        className={cn(btn, card.isActive ? 'bg-amber-400/15 text-amber-200 hover:bg-amber-400/25' : 'bg-emerald-400/15 text-emerald-200 hover:bg-emerald-400/25')}>
+        {save.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : card.isActive ? <PauseCircle className="h-3 w-3" /> : <PlayCircle className="h-3 w-3" />}
+        {card.isActive ? 'Pause sales' : 'Resume sales'}
+      </button>
+      {editing && card.storeId != null && (
+        <CardFormDialog open={editing} onOpenChange={setEditing} storeId={card.storeId} storeName={card.storeName ?? card.vendorName ?? 'Store'}
+          categories={categories.length ? categories : (data.categories ?? []).map((c) => ({ id: c.id, name: c.name }))}
+          initial={{ id: card.id, name: card.name, description: card.description, cardPrice: card.cardPrice, walletAmount: card.walletAmount,
+            validityInDays: card.validityInDays, categoryIds: (data.categories ?? []).map((c) => c.id) }} />
+      )}
+    </span>
+  )
+}
+
 function CardHero({ data }: { data?: CardInsights }) {
   const card = data?.card
   const canVendor = hasPermission('SEC_VENDORS')
@@ -111,6 +142,7 @@ function CardHero({ data }: { data?: CardInsights }) {
             </span>
             <span className="rounded-full bg-white/10 px-2.5 py-1 font-mono text-[11px] text-white/70">#{card.id}</span>
             <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] text-white/70">{theme.label} style</span>
+            {hasPermission('SEC_CARDS') && <CardAdminActions data={data!} />}
           </div>
           <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">{card.name}</h1>
           {card.description && <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/65">{card.description}</p>}

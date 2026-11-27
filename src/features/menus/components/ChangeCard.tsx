@@ -65,7 +65,7 @@ export const ChangeCard = forwardRef<HTMLDivElement, {
               {c.requestedByType === 'MANAGER' ? 'Store manager' : 'Store owner'}
             </span>
             {showStore && (
-              <Link to="/menus/$storeId" params={{ storeId: String(c.storeId) }} className="flex items-center gap-1.5 font-medium text-foreground/80 hover:text-primary hover:underline">
+              <Link to="/menus/$storeId" params={{ storeId: String(c.storeId) }} search={{}} className="flex items-center gap-1.5 font-medium text-foreground/80 hover:text-primary hover:underline">
                 <span className={cn('flex h-4 w-4 items-center justify-center rounded bg-gradient-to-br text-[8px] font-bold text-white', avatarGradient(c.storeId))}>
                   {vendorInitials(c.storeName)}
                 </span>

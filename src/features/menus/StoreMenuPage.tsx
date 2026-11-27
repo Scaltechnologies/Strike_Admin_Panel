@@ -2,10 +2,12 @@ import { useMemo, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  ArrowLeft, ArrowUpRight, BadgeCheck, Hourglass, Leaf, Drumstick, MapPin, PackageX, Pencil, Plus, Search,
+  ArrowLeft, ArrowUpRight, BadgeCheck, CreditCard, FileSpreadsheet, Hourglass, Leaf, Drumstick, MapPin, PackageX, Pencil, Plus, Search,
   ShieldCheck, Trash2, UserCog, UtensilsCrossed, X,
 } from 'lucide-react'
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog'
+import { MenuUploadDialog } from '@/features/onboarding/components/MenuUploadDialog'
+import { CardFormDialog } from '@/features/onboarding/components/CardFormDialog'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { ErrorState } from '@/components/common/ErrorState'
 import { TabError } from '@/components/common/TabError'
@@ -28,7 +30,7 @@ import { formatPrice, usableImage } from './utils/menu-meta'
 type VegFilter = 'all' | 'veg' | 'nonveg'
 type StockFilter = 'all' | 'in' | 'out'
 
-export function StoreMenuPage({ storeId }: { storeId: number }) {
+export function StoreMenuPage({ storeId, openUpload, openCard }: { storeId: number; openUpload?: boolean; openCard?: boolean }) {
   const summary = useMenuStore(storeId)
   const items = useStoreItems(storeId)
   const cats = useStoreMenu(storeId)
@@ -43,6 +45,9 @@ export function StoreMenuPage({ storeId }: { storeId: number }) {
   const [stock, setStock] = useState<StockFilter>('all')
   const [editing, setEditing] = useState<MenuItemResponse | 'new' | null>(null)
   const [removing, setRemoving] = useState<MenuItemResponse | null>(null)
+  const [uploading, setUploading] = useState(!!openUpload)
+  const [carding, setCarding] = useState(!!openCard)
+  const cardCategories = useMemo(() => (cats.data ?? []).filter((c) => (c.items?.length ?? 0) > 0).map((c) => ({ id: c.id, name: c.name })), [cats.data])
 
   const storeCategoryNames = useMemo(() => Object.fromEntries((cats.data ?? []).map((c) => [String(c.id), c.name])), [cats.data])
   const { options, names } = useCategoryOptions(storeCategoryNames)
@@ -135,6 +140,16 @@ export function StoreMenuPage({ storeId }: { storeId: number }) {
                   className="btn-shine flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#e01a00] to-orange-500 px-4 py-2 text-sm font-semibold shadow-lg shadow-orange-600/30">
                   <Plus className="h-4 w-4" /> Add item
                 </button>
+                <button type="button" onClick={() => setUploading(true)}
+                  className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/[0.08] px-4 py-2 text-sm font-semibold text-white backdrop-blur-md hover:bg-white/[0.15]">
+                  <FileSpreadsheet className="h-4 w-4" /> Upload menu
+                </button>
+                {hasPermission('SEC_CARDS') && (
+                  <button type="button" onClick={() => setCarding(true)}
+                    className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/[0.08] px-4 py-2 text-sm font-semibold text-white backdrop-blur-md hover:bg-white/[0.15]">
+                    <CreditCard className="h-4 w-4" /> Create card
+                  </button>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
@@ -218,6 +233,9 @@ export function StoreMenuPage({ storeId }: { storeId: number }) {
         initial={editing && editing !== 'new' ? editing : { availabilityStatus: 'AVAILABLE', itemType: 'VEG' }}
         categories={options} submitLabel={editing === 'new' ? 'Add item' : 'Save'} submitting={createItem.isPending || updateItem.isPending}
         onSubmit={saveItem} />
+
+      <MenuUploadDialog open={uploading} onOpenChange={setUploading} storeId={storeId} storeName={s?.name ?? `Store #${storeId}`} />
+      <CardFormDialog open={carding} onOpenChange={setCarding} storeId={storeId} storeName={s?.name ?? `Store #${storeId}`} categories={cardCategories} />
 
       <ConfirmationDialog open={removing != null} title={`Remove ${removing?.name ?? 'this item'}?`}
         description="It disappears from the store's menu straight away. Cards that only covered this item may stop working for it."

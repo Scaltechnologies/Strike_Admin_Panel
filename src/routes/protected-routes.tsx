@@ -266,13 +266,29 @@ const StoreMenuPage = lazy(() =>
 
 function StoreMenuRouteComponent() {
   const { storeId } = storeMenuRoute.useParams()
-  return <StoreMenuPage key={storeId} storeId={Number(storeId)} />
+  const { upload, card } = storeMenuRoute.useSearch()
+  return <StoreMenuPage key={storeId} storeId={Number(storeId)} openUpload={upload} openCard={card} />
 }
 
 export const storeMenuRoute = createRoute({
   getParentRoute: () => protectedGroupRoute,
   path: '/menus/$storeId',
+  // ?upload / ?card open the menu upload or new-card dialog (used after adding a vendor).
+  validateSearch: (search: Record<string, unknown>): { upload?: boolean; card?: boolean } => ({
+    upload: search.upload === true || search.upload === 'true' ? true : undefined,
+    card: search.card === true || search.card === 'true' ? true : undefined,
+  }),
   component: StoreMenuRouteComponent,
+})
+
+const VendorImportPage = lazy(() =>
+  import('@/features/onboarding/VendorImportPage').then((m) => ({ default: m.VendorImportPage })),
+)
+
+export const vendorImportRoute = createRoute({
+  getParentRoute: () => protectedGroupRoute,
+  path: '/vendors/import',
+  component: VendorImportPage,
 })
 
 interface NotificationsSearch {

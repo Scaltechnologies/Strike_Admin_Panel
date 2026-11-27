@@ -2,13 +2,16 @@ import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import {
-  AlertTriangle, ArrowLeft, Ban, CalendarDays, Check, CheckCircle2, Copy, Mail, Percent, Phone, RotateCcw, ShieldBan,
+  AlertTriangle, ArrowLeft, Ban, CalendarDays, Check, CheckCircle2, Copy, CreditCard, KeyRound, Mail, Percent, Phone, RotateCcw, ShieldBan, UtensilsCrossed,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog'
 import { usePermission } from '@/core/permissions/permissions'
 import { PERMISSIONS } from '@/constants/permissions'
 import { cn } from '@/lib/utils'
+import { hasPermission } from '@/core/auth/auth'
+import { useStoreByVendor } from '@/features/stores/hooks/useStores'
+import { SetPinDialog } from '@/features/onboarding/components/SetPinDialog'
 import { formatDate } from '@/utils/helpers/date'
 import { useApproveVendor, useReactivateVendor, useRejectVendor, useSuspendVendor } from '../hooks/useVendors'
 import type { VendorRecord } from '../types/vendor.types'
@@ -43,6 +46,8 @@ export function VendorHero({ vendor }: { vendor: VendorRecord }) {
   const canApprove = usePermission(PERMISSIONS.VENDORS.APPROVE)
   const [confirm, setConfirm] = useState<Action | null>(null)
   const [reason, setReason] = useState('')
+  const [pinOpen, setPinOpen] = useState(false)
+  const store = useStoreByVendor(vendor.vendorId)
   const approve = useApproveVendor()
   const reject = useRejectVendor()
   const suspend = useSuspendVendor()
@@ -111,6 +116,24 @@ export function VendorHero({ vendor }: { vendor: VendorRecord }) {
               </div>
             </div>
 
+            <div className="flex flex-col items-start gap-2 lg:items-end">
+            {canApprove && (
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => setPinOpen(true)} className={cn(btn, 'bg-white/10 text-white shadow-none hover:bg-white/20')}>
+                  <KeyRound className="h-4 w-4" />Set PIN
+                </button>
+                {store.data && hasPermission('SEC_MENUS') && (
+                  <Link to="/menus/$storeId" params={{ storeId: String(store.data.id) }} search={{ upload: true }} className={cn(btn, 'bg-white/10 text-white shadow-none hover:bg-white/20')}>
+                    <UtensilsCrossed className="h-4 w-4" />Upload menu
+                  </Link>
+                )}
+                {store.data && hasPermission('SEC_MENUS') && (
+                  <Link to="/menus/$storeId" params={{ storeId: String(store.data.id) }} search={{ card: true }} className={cn(btn, 'bg-white/10 text-white shadow-none hover:bg-white/20')}>
+                    <CreditCard className="h-4 w-4" />Create card
+                  </Link>
+                )}
+              </div>
+            )}
             {canApprove && (
               <div className="flex flex-wrap gap-2">
                 {vendor.status === 'PENDING' && (
@@ -139,6 +162,7 @@ export function VendorHero({ vendor }: { vendor: VendorRecord }) {
                 )}
               </div>
             )}
+            </div>
           </div>
 
           {(vendor.status === 'REJECTED' || vendor.status === 'SUSPENDED') && vendor.rejectionReason && (
@@ -150,6 +174,7 @@ export function VendorHero({ vendor }: { vendor: VendorRecord }) {
         </div>
       </motion.section>
 
+      <SetPinDialog open={pinOpen} onOpenChange={setPinOpen} vendorId={vendor.vendorId} hotelName={name} mobileNumber={vendor.mobileNumber ?? ''} />
       <ConfirmationDialog open={confirm === 'approve'} title="Approve vendor" confirmLabel="Approve" isLoading={busy}
         description={`Approve ${name}? They'll be activated and notified.`} onConfirm={run} onCancel={done} />
       <ConfirmationDialog open={confirm === 'reject'} title="Reject vendor" confirmLabel="Reject" variant="destructive" isLoading={busy}

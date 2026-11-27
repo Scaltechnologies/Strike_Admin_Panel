@@ -24,7 +24,7 @@ export function StoresPanel() {
   const stores = useMenuStores(q, sort, page, PAGE_SIZE)
   const list = stores.data?.content ?? []
   const totalPages = stores.data?.totalPages ?? 0
-  const open = (s: StoreMenuSummary) => void navigate({ to: '/menus/$storeId', params: { storeId: String(s.storeId) } })
+  const open = (s: StoreMenuSummary) => void navigate({ to: '/menus/$storeId', params: { storeId: String(s.storeId) }, search: {} })
 
   return (
     <div className="flex flex-col gap-4">
