@@ -8,6 +8,7 @@ import {
 import type { LucideProps } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { SidebarItem } from '@/core/navigation/sidebar'
+import { useMenuPendingCount } from '@/features/menus/api/menu-admin.api'
 
 type IconComponent = React.ComponentType<LucideProps>
 
@@ -28,6 +29,9 @@ export const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, on
   const currentPath = useRouterState({ select: (s) => s.location.pathname })
   const isActive = currentPath === item.path || (item.path !== '/dashboard' && currentPath.startsWith(item.path))
   const IconComponent = ICON_MAP[item.icon]
+  // Menus shows how many store menu changes are waiting for approval.
+  const pendingMenus = useMenuPendingCount(item.path === '/menus')
+  const badge = item.badge ?? (item.path === '/menus' && pendingMenus.data ? pendingMenus.data : undefined)
 
   return (
     <Link
@@ -56,12 +60,12 @@ export const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, on
       {!collapsed && (
         <>
           <span className="min-w-0 flex-1 truncate">{item.title}</span>
-          {item.badge !== undefined && (
+          {badge !== undefined && (
             <span className={cn(
               'ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold',
               isActive ? 'bg-white/20 text-white' : 'bg-primary/15 text-primary',
             )}>
-              {item.badge}
+              {badge}
             </span>
           )}
         </>
@@ -69,7 +73,7 @@ export const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, on
 
       {collapsed && (
         <>
-          {item.badge !== undefined && (
+          {badge !== undefined && (
             <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
           )}
           <span
@@ -81,7 +85,7 @@ export const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, on
             )}
           >
             {item.title}
-            {item.badge !== undefined && <span className="ml-1.5 text-muted-foreground">({item.badge})</span>}
+            {badge !== undefined && <span className="ml-1.5 text-muted-foreground">({badge})</span>}
           </span>
         </>
       )}

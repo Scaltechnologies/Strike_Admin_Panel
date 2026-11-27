@@ -11,6 +11,7 @@ import { LoadingScreen } from '@/components/common/LoadingScreen'
 import { APP_ROUTES } from '@/constants/routes/app-routes'
 import { isVendorTab } from '@/features/vendors/utils/vendor-tabs'
 import { isUserTab } from '@/features/users/utils/user-meta'
+import { isMenusTab } from '@/features/menus/utils/menu-tabs'
 
 const DashboardPage = lazy(() =>
   import('@/features/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })),
@@ -225,10 +226,31 @@ export const categoriesRoute = createRoute({
   component: CategoriesPage,
 })
 
+function MenusRouteComponent() {
+  const { tab } = menusRoute.useSearch()
+  return <MenusPage tab={tab} />
+}
+
 export const menusRoute = createRoute({
   getParentRoute: () => protectedGroupRoute,
   path: '/menus',
-  component: MenusPage,
+  validateSearch: (search: Record<string, unknown>) => ({ tab: isMenusTab(search.tab) ? search.tab : undefined }),
+  component: MenusRouteComponent,
+})
+
+const StoreMenuPage = lazy(() =>
+  import('@/features/menus/StoreMenuPage').then((m) => ({ default: m.StoreMenuPage })),
+)
+
+function StoreMenuRouteComponent() {
+  const { storeId } = storeMenuRoute.useParams()
+  return <StoreMenuPage key={storeId} storeId={Number(storeId)} />
+}
+
+export const storeMenuRoute = createRoute({
+  getParentRoute: () => protectedGroupRoute,
+  path: '/menus/$storeId',
+  component: StoreMenuRouteComponent,
 })
 
 interface NotificationsSearch {

@@ -1,317 +1,134 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import { motion } from 'framer-motion'
 import {
-  Search, Leaf, Drumstick, ShoppingBag, ChevronDown, Package,
+  BarChart3, CheckCircle2, ClipboardCheck, History, Hourglass, PackageX, Settings2, Store, UtensilsCrossed, type LucideIcon,
 } from 'lucide-react'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
+import { TabError } from '@/components/common/TabError'
 import { cn } from '@/lib/utils'
-import { useStores } from '@/features/stores/hooks/useStores'
-import { useStoreMenu } from './hooks/useMenus'
-import type { CategoryWithItemsResponse, MenuItemResponse } from './types/menu.types'
+import { formatRelative } from '@/utils/helpers/date'
+import { AnimatedNumber } from '@/features/dashboard/components/dashboard-ui'
+import { useApprovalSettings, useMenuOverview } from './api/menu-admin.api'
+import { ApprovalsPanel } from './components/ApprovalsPanel'
+import { ApprovalSettingsPanel } from './components/ApprovalSettingsPanel'
+import { MenuInsightsPanel } from './components/MenuInsightsPanel'
+import { StoresPanel } from './components/StoresPanel'
+import { MODE_META } from './utils/menu-meta'
+import type { MenusTab } from './utils/menu-tabs'
 
-function VegBadge({ type }: { type: string | null }) {
-  if (!type) return null
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs font-medium',
-        type === 'VEG'
-          ? 'bg-green-100 text-green-700 dark:bg-green-400/10 dark:text-green-400'
-          : 'bg-red-100 text-red-700 dark:bg-red-400/10 dark:text-red-400',
-      )}
-    >
-      {type === 'VEG' ? <Leaf className="h-2.5 w-2.5" /> : <Drumstick className="h-2.5 w-2.5" />}
-      {type === 'VEG' ? 'Veg' : 'Non-veg'}
-    </span>
-  )
-}
+const TABS: { id: MenusTab; label: string; icon: LucideIcon }[] = [
+  { id: 'approvals', label: 'Approvals', icon: ClipboardCheck },
+  { id: 'stores', label: 'Store menus', icon: Store },
+  { id: 'insights', label: 'Insights', icon: BarChart3 },
+  { id: 'history', label: 'History', icon: History },
+  { id: 'settings', label: 'Approval settings', icon: Settings2 },
+]
 
-function AvailabilityBadge({ status }: { status: string | null }) {
-  const available = status === 'AVAILABLE' || status === null
-  return (
-    <span
-      className={cn(
-        'rounded px-1.5 py-0.5 text-xs font-medium',
-        available
-          ? 'bg-green-100 text-green-700 dark:bg-green-400/10 dark:text-green-400'
-          : 'bg-gray-100 text-gray-500 dark:bg-gray-400/10 dark:text-gray-400',
-      )}
-    >
-      {available ? 'Available' : 'Out of stock'}
-    </span>
-  )
-}
-
-function MenuItemCard({ item }: { item: MenuItemResponse }) {
-  return (
-    <div className="flex items-start gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:bg-muted/30">
-      {item.imageUrl ? (
-        <img
-          src={item.imageUrl}
-          alt={item.name}
-          className="h-14 w-14 shrink-0 rounded-lg object-cover"
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).style.display = 'none'
-          }}
-        />
-      ) : (
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-muted">
-          <Package className="h-5 w-5 text-muted-foreground" />
-        </div>
-      )}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <p className="text-sm font-medium text-foreground">{item.name}</p>
-          <p className="shrink-0 font-mono text-sm font-semibold text-foreground">₹{item.price}</p>
-        </div>
-        {item.description && (
-          <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{item.description}</p>
-        )}
-        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          <VegBadge type={item.itemType} />
-          <AvailabilityBadge status={item.availabilityStatus} />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function CategorySection({ category, search, vegFilter }: {
-  category: CategoryWithItemsResponse
-  search: string
-  vegFilter: string
+function HeaderStat({ icon: Icon, label, value, tone, onClick, pulse, hint }: {
+  icon: LucideIcon; label: string; value: number | undefined; tone: string; onClick?: () => void; pulse?: boolean; hint?: string
 }) {
-  const filtered = useMemo(() => {
-    let items = category.items
-    if (search) {
-      const q = search.toLowerCase()
-      items = items.filter(
-        (i) =>
-          i.name.toLowerCase().includes(q) ||
-          (i.description?.toLowerCase().includes(q) ?? false),
-      )
-    }
-    if (vegFilter === 'VEG') items = items.filter((i) => i.itemType === 'VEG')
-    if (vegFilter === 'NON_VEG') items = items.filter((i) => i.itemType === 'NON_VEG')
-    return items
-  }, [category.items, search, vegFilter])
-
-  if (filtered.length === 0) return null
-
   return (
-    <div>
-      <div className="mb-3 flex items-center gap-2">
-        <h3 className="text-sm font-semibold text-foreground">{category.name}</h3>
-        <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-          {filtered.length}
-        </span>
-      </div>
-      <div className="grid gap-2 sm:grid-cols-2">
-        {filtered.map((item) => (
-          <MenuItemCard key={item.id} item={item} />
-        ))}
-      </div>
-    </div>
+    <button type="button" onClick={onClick}
+      className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-left backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white/[0.12]">
+      <span className={cn('relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white shadow-lg', tone)}>
+        {pulse && <span className="absolute inset-0 animate-ping rounded-xl bg-amber-400/50" />}
+        <Icon className="relative h-4 w-4" />
+      </span>
+      <span className="min-w-0">
+        {value == null ? <span className="block text-xl font-bold leading-none text-white">—</span>
+          : <AnimatedNumber value={value} className="block text-xl font-bold leading-none text-white" />}
+        <span className="mt-1 block truncate text-[11px] text-white/60">{label}</span>
+        {hint && <span className="block truncate text-[10px] text-white/40">{hint}</span>}
+      </span>
+    </button>
   )
 }
 
-export function MenusPage() {
-  const [storeSearch, setStoreSearch] = useState('')
-  const [storeOpen, setStoreOpen] = useState(false)
-  const [selectedStoreId, setSelectedStoreId] = useState<number | null>(null)
-  const [selectedStoreName, setSelectedStoreName] = useState('')
-  const [itemSearch, setItemSearch] = useState('')
-  const [vegFilter, setVegFilter] = useState('')
-  const storeRef = useRef<HTMLDivElement>(null)
-
-  const { data: storeData, isLoading: storesLoading } = useStores(0, 50, { status: 'ACTIVE', q: storeSearch })
-  const { data: categories, isLoading: menuLoading } = useStoreMenu(selectedStoreId)
-
-  const stores = storeData?.content ?? []
-
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (storeRef.current && !storeRef.current.contains(e.target as Node)) {
-        setStoreOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  const allItems = useMemo(
-    () => (categories ?? []).flatMap((c) => c.items),
-    [categories],
-  )
-
-  const totalItems = allItems.length
-  const vegCount = allItems.filter((i) => i.itemType === 'VEG').length
-  const availableCount = allItems.filter((i) => i.availabilityStatus === 'AVAILABLE' || i.availabilityStatus === null).length
+export function MenusPage({ tab = 'approvals' }: { tab?: MenusTab }) {
+  const navigate = useNavigate()
+  const overview = useMenuOverview()
+  const settings = useApprovalSettings()
+  const o = overview.data
+  const pending = o?.changes?.PENDING ?? 0
+  const mode = settings.data?.mode
+  const goTab = (id: MenusTab) => void navigate({ to: '/menus', search: { tab: id === 'approvals' ? undefined : id }, replace: true })
 
   return (
-    <div className="flex h-full flex-col gap-6 p-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl font-semibold text-foreground">Menus</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          Browse menu categories and items by store
-        </p>
-      </div>
-
-      {/* Store selector */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div ref={storeRef} className="relative w-full max-w-sm">
-          <button
-            type="button"
-            onClick={() => setStoreOpen((o) => !o)}
-            className={cn(
-              'flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm',
-              'text-left transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring',
-              selectedStoreId && 'border-primary/50 bg-primary/5',
+    <div className="flex flex-col gap-5 p-4 sm:p-6">
+      <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+        className="relative overflow-hidden rounded-3xl bg-[#0b0c10] p-6 text-white shadow-xl shadow-black/10 sm:p-7">
+        <div className="auth-aurora pointer-events-none absolute inset-0 opacity-70" aria-hidden><span /><span /><span /></div>
+        <div className="auth-grid pointer-events-none absolute inset-0" aria-hidden />
+        <UtensilsCrossed className="auth-float pointer-events-none absolute -right-6 -top-6 h-44 w-44 text-white/[0.04]" aria-hidden />
+        <div className="relative z-10 flex flex-col gap-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex items-start gap-4">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-lime-300 via-emerald-500 to-teal-700 shadow-lg shadow-emerald-600/40">
+                <UtensilsCrossed className="h-6 w-6" />
+              </span>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">Menus</h1>
+                <p className="mt-1 max-w-xl text-sm text-white/60">Every store's menu in one place. Approve what owners and managers want to change, or edit any menu yourself.</p>
+              </div>
+            </div>
+            {mode && (
+              <button type="button" onClick={() => goTab('settings')}
+                className="flex items-center gap-2.5 self-start rounded-2xl border border-white/10 bg-white/[0.06] px-3.5 py-2 text-left backdrop-blur-md transition-colors hover:bg-white/[0.12]">
+                <span className={cn('flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br', MODE_META[mode].tone)}>
+                  {(() => { const I = MODE_META[mode].icon; return <I className="h-3.5 w-3.5" /> })()}
+                </span>
+                <span>
+                  <span className="block text-[10px] uppercase tracking-wider text-white/50">Approval</span>
+                  <span className="block text-sm font-semibold">{MODE_META[mode].short}</span>
+                </span>
+              </button>
             )}
-          >
-            <ShoppingBag className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <span className={cn('flex-1 truncate', !selectedStoreName && 'text-muted-foreground')}>
-              {selectedStoreName || 'Select a store…'}
-            </span>
-            <ChevronDown className={cn('h-3.5 w-3.5 shrink-0 transition-transform', storeOpen && 'rotate-180')} />
-          </button>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
+            <HeaderStat icon={Hourglass} label="Waiting for approval" value={o ? pending : undefined} pulse={pending > 0}
+              hint={o?.oldestPendingAt ? `oldest ${formatRelative(o.oldestPendingAt)}` : undefined}
+              tone="bg-gradient-to-br from-amber-400 to-orange-600" onClick={() => goTab('approvals')} />
+            <HeaderStat icon={CheckCircle2} label="Decided today" value={o ? (o.approvedToday ?? 0) + (o.rejectedToday ?? 0) : undefined}
+              hint={o ? `${o.approvedToday ?? 0} approved · ${o.rejectedToday ?? 0} rejected` : undefined}
+              tone="bg-gradient-to-br from-emerald-400 to-teal-600" onClick={() => goTab('history')} />
+            <HeaderStat icon={UtensilsCrossed} label="Menu items" value={o?.items} hint={o?.addedThisWeek ? `${o.addedThisWeek} added this week` : undefined}
+              tone="bg-gradient-to-br from-pink-400 to-rose-600" onClick={() => goTab('insights')} />
+            <HeaderStat icon={Store} label="Stores with a menu" value={o?.stores} tone="bg-gradient-to-br from-sky-400 to-indigo-600" onClick={() => goTab('stores')} />
+            <HeaderStat icon={PackageX} label="Out of stock now" value={o?.outOfStock} tone="bg-gradient-to-br from-violet-400 to-fuchsia-600" onClick={() => goTab('stores')} />
+          </div>
+        </div>
+      </motion.section>
 
-          {storeOpen && (
-            <div className="absolute left-0 top-full z-20 mt-1 w-full overflow-hidden rounded-xl border border-border bg-card shadow-lg">
-              <div className="p-2">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    type="text"
-                    value={storeSearch}
-                    onChange={(e) => setStoreSearch(e.target.value)}
-                    placeholder="Search stores…"
-                    className="w-full rounded-lg border border-border bg-background py-1.5 pl-8 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-              </div>
-              <div className="max-h-52 overflow-y-auto">
-                {storesLoading ? (
-                  <div className="p-3 text-center text-sm text-muted-foreground">Loading…</div>
-                ) : stores.length === 0 ? (
-                  <div className="p-3 text-center text-sm text-muted-foreground">No stores found</div>
-                ) : (
-                  stores.map((s) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedStoreId(s.id)
-                        setSelectedStoreName(s.name)
-                        setStoreOpen(false)
-                      }}
-                      className={cn(
-                        'flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-muted',
-                        selectedStoreId === s.id && 'bg-primary/5 font-medium text-primary',
-                      )}
-                    >
-                      <ShoppingBag className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                      <span className="flex-1 truncate">{s.name}</span>
-                      <span className="font-mono text-xs text-muted-foreground">#{s.id}</span>
-                    </button>
-                  ))
+      <nav aria-label="Menu sections" className="sticky top-0 z-20 -mx-1 overflow-x-auto rounded-2xl border border-border bg-card/85 p-1.5 shadow-sm backdrop-blur-md">
+        <div role="tablist" className="flex min-w-max gap-1">
+          {TABS.map(({ id, label, icon: Icon }) => {
+            const on = tab === id
+            return (
+              <button key={id} type="button" role="tab" aria-selected={on} onClick={() => goTab(id)}
+                className={cn('relative flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[13px] font-medium transition-colors', on ? 'text-white' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}>
+                {on && <motion.span layoutId="menus-tab-pill" className="absolute inset-0 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 shadow-md shadow-emerald-500/25" transition={{ type: 'spring', stiffness: 480, damping: 36 }} />}
+                <Icon className="relative h-4 w-4" />
+                <span className="relative">{label}</span>
+                {id === 'approvals' && pending > 0 && (
+                  <span className={cn('relative rounded-full px-1.5 text-[10px] font-bold tabular-nums', on ? 'bg-white/25 text-white' : 'bg-amber-500 text-white')}>{pending}</span>
                 )}
-              </div>
-            </div>
-          )}
+              </button>
+            )
+          })}
         </div>
+      </nav>
 
-        {selectedStoreId && (
-          <>
-            {/* Item search */}
-            <div className="relative flex-1 min-w-[160px] max-w-xs">
-              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                value={itemSearch}
-                onChange={(e) => setItemSearch(e.target.value)}
-                placeholder="Search items…"
-                className="w-full rounded-lg border border-border bg-card py-2 pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-
-            {/* Veg filter */}
-            <div className="flex overflow-hidden rounded-lg border border-border bg-card text-xs">
-              {[
-                { value: '', label: 'All' },
-                { value: 'VEG', label: 'Veg' },
-                { value: 'NON_VEG', label: 'Non-veg' },
-              ].map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setVegFilter(opt.value)}
-                  className={cn(
-                    'px-3 py-2 font-medium transition-colors hover:bg-muted',
-                    vegFilter === opt.value && 'bg-primary/10 text-primary',
-                  )}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-
-      {!selectedStoreId ? (
-        <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-border">
-          <div className="text-center">
-            <ShoppingBag className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
-            <p className="text-sm font-medium text-muted-foreground">Select a store to view its menu</p>
-            <p className="mt-1 text-xs text-muted-foreground">Choose an active store from the dropdown above</p>
-          </div>
-        </div>
-      ) : menuLoading ? (
-        <div className="flex flex-1 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        </div>
-      ) : !categories || categories.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-border">
-          <div className="text-center">
-            <Package className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
-            <p className="text-sm font-medium text-muted-foreground">No menu found for this store</p>
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* Stats */}
-          <div className="flex flex-wrap gap-4 rounded-xl border border-border bg-card px-5 py-3">
-            <div className="text-sm">
-              <span className="font-semibold text-foreground">{categories.length}</span>
-              <span className="ml-1 text-muted-foreground">categories</span>
-            </div>
-            <div className="text-sm">
-              <span className="font-semibold text-foreground">{totalItems}</span>
-              <span className="ml-1 text-muted-foreground">items</span>
-            </div>
-            <div className="text-sm">
-              <span className="font-semibold text-green-600">{vegCount}</span>
-              <span className="ml-1 text-muted-foreground">veg</span>
-            </div>
-            <div className="text-sm">
-              <span className="font-semibold text-foreground">{availableCount}</span>
-              <span className="ml-1 text-muted-foreground">available</span>
-            </div>
-          </div>
-
-          {/* Categories */}
-          <div className="space-y-6 overflow-y-auto pb-4">
-            {categories.map((cat) => (
-              <CategorySection
-                key={cat.id}
-                category={cat}
-                search={itemSearch}
-                vegFilter={vegFilter}
-              />
-            ))}
-          </div>
-        </>
-      )}
+      <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+        <ErrorBoundary key={tab} fallback={<TabError />}>
+          {tab === 'approvals' && <ApprovalsPanel status="PENDING" approvalOff={mode === 'OFF'} />}
+          {tab === 'stores' && <StoresPanel />}
+          {tab === 'insights' && <MenuInsightsPanel data={o} loading={overview.isLoading} />}
+          {tab === 'history' && <ApprovalsPanel status="DECIDED" />}
+          {tab === 'settings' && <ApprovalSettingsPanel />}
+        </ErrorBoundary>
+      </motion.div>
     </div>
   )
 }
+
+export default MenusPage
