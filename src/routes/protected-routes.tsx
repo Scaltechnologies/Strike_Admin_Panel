@@ -13,6 +13,7 @@ import { isVendorTab } from '@/features/vendors/utils/vendor-tabs'
 import { isUserTab } from '@/features/users/utils/user-meta'
 import { isMenusTab } from '@/features/menus/utils/menu-tabs'
 import { isRedemptionsTab } from '@/features/redemptions/utils/redemption-tabs'
+import { isWithdrawalsTab, type WithdrawalsTab } from '@/features/withdrawals/utils/withdrawal-tabs'
 
 const DashboardPage = lazy(() =>
   import('@/features/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })),
@@ -170,10 +171,31 @@ export const paymentsRoute = createRoute({
   component: PaymentsPage,
 })
 
+function WithdrawalsRouteComponent() {
+  const { tab } = withdrawalsRoute.useSearch()
+  return <WithdrawalsPage tab={tab} />
+}
+
 export const withdrawalsRoute = createRoute({
   getParentRoute: () => protectedGroupRoute,
   path: '/withdrawals',
-  component: WithdrawalsPage,
+  validateSearch: (search: Record<string, unknown>): { tab?: WithdrawalsTab } => ({ tab: isWithdrawalsTab(search.tab) ? search.tab : undefined }),
+  component: WithdrawalsRouteComponent,
+})
+
+const WithdrawalDetailPage = lazy(() =>
+  import('@/features/withdrawals/WithdrawalDetailPage').then((m) => ({ default: m.WithdrawalDetailPage })),
+)
+
+function WithdrawalDetailRouteComponent() {
+  const { withdrawalId } = withdrawalDetailRoute.useParams()
+  return <WithdrawalDetailPage key={withdrawalId} withdrawalId={Number(withdrawalId)} />
+}
+
+export const withdrawalDetailRoute = createRoute({
+  getParentRoute: () => protectedGroupRoute,
+  path: '/withdrawals/$withdrawalId',
+  component: WithdrawalDetailRouteComponent,
 })
 
 export const cardsRoute = createRoute({
