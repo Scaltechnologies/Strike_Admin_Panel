@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { X, Tag, Percent, DollarSign, Calendar, Users, Store } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { toLocalInputValue, toServerDateTime } from '@/utils/helpers/date'
 import { useCreateCoupon, useUpdateCoupon } from '../hooks/useCoupons'
 import { VendorCombobox } from './VendorCombobox'
 import type { CouponResponse, CreateCouponRequest, DiscountType } from '../types/coupon.types'
@@ -8,15 +9,9 @@ import type { CouponResponse, CreateCouponRequest, DiscountType } from '../types
 const INPUT_CLS =
   'block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60'
 
-function toLocalDatetimeValue(iso: string): string {
-  if (!iso) return ''
-  return iso.slice(0, 16)
-}
-
-function toIsoFromLocal(local: string): string {
-  if (!local) return ''
-  return new Date(local).toISOString().slice(0, 19)
-}
+// Coupon validity is stored in UTC; the form shows and takes it in the admin's own clock.
+const toLocalDatetimeValue = toLocalInputValue
+const toIsoFromLocal = toServerDateTime
 
 interface CouponFormProps {
   coupon?: CouponResponse | null

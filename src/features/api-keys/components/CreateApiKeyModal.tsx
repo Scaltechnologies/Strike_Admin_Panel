@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X, Copy, Check, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
+import { formatDateTime, toServerDateTime } from '@/utils/helpers/date'
 import { useCreateApiKey } from '../hooks/useApiKeys'
 import type { CreateApiKeyRequest, CreateApiKeyResponse } from '../types/api-key.types'
 
@@ -49,7 +50,7 @@ function CreatedKeyView({ result, onClose }: { result: CreateApiKeyResponse; onC
       <div className="space-y-1 rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
         <p><span className="font-medium text-foreground">Name:</span> {result.name}</p>
         <p><span className="font-medium text-foreground">Prefix:</span> <span className="font-mono">{result.keyPrefix}…</span></p>
-        {result.expiresAt && <p><span className="font-medium text-foreground">Expires:</span> {result.expiresAt}</p>}
+        {result.expiresAt && <p><span className="font-medium text-foreground">Expires:</span> {formatDateTime(result.expiresAt)}</p>}
       </div>
 
       <button onClick={onClose}
@@ -73,7 +74,8 @@ export function CreateApiKeyModal({ open, onClose }: CreateApiKeyModalProps) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const payload = { ...form, expiresAt: form.expiresAt || undefined }
+    // The input is in the admin's own clock; the server works in UTC.
+    const payload = { ...form, expiresAt: form.expiresAt ? toServerDateTime(form.expiresAt) : undefined }
     create(payload, { onSuccess: (data) => setCreated(data) })
   }
 

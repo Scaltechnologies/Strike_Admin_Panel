@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
-import { formatDistanceToNowStrict, parseISO, isValid } from 'date-fns'
+import { formatDistanceToNowStrict, isValid } from 'date-fns'
+import { parseServerDate } from '@/utils/helpers/date'
 import { BellRing, CheckCircle2, ChevronRight, Percent, Store, Wallet } from 'lucide-react'
 import { hasPermission } from '@/core/auth/auth'
 import { cn } from '@/lib/utils'
@@ -9,7 +10,7 @@ import { AnimatedNumber, Panel, Skeleton } from './dashboard-ui'
 import { formatInrCompact, toNumber } from '../utils/dashboard-format'
 
 const ago = (iso: string) => {
-  const d = parseISO(iso)
+  const d = parseServerDate(iso)
   return isValid(d) ? formatDistanceToNowStrict(d, { addSuffix: true }) : ''
 }
 

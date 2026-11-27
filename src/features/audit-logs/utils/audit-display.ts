@@ -1,4 +1,5 @@
-import { parseISO, isValid } from 'date-fns'
+import { isValid } from 'date-fns'
+import { parseServerDate } from '@/utils/helpers/date'
 import { ShieldCheck, Store, UserCog, Bot, type LucideIcon } from 'lucide-react'
 import type { AuditActorType, AuditLogResponse } from '../types/audit-log.types'
 
@@ -77,7 +78,7 @@ export function initials(name: string): string {
 
 /** When it happened, as a real Date in the viewer's time zone. */
 export function happenedAt(log: Pick<AuditLogResponse, 'createdAt' | 'createdAtUtc'>): Date {
-  const d = parseISO(log.createdAtUtc ?? log.createdAt)
+  const d = parseServerDate(log.createdAtUtc ?? log.createdAt)
   return isValid(d) ? d : new Date(NaN)
 }
 

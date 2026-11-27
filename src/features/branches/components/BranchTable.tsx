@@ -7,10 +7,11 @@ import {
 } from '@tanstack/react-table'
 import { MapPin, RefreshCw, GitBranch } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { parseServerDate } from '@/utils/helpers/date'
 import type { Branch } from '../types/branch.types'
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
+  return parseServerDate(iso).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',

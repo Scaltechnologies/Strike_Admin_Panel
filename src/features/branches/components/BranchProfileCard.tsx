@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { MapPin, Phone, Mail, Ruler, CheckCircle2, XCircle, Edit2, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { parseServerDate } from '@/utils/helpers/date'
 import { useAuthStore } from '@/store/auth-store'
 import { ROLES } from '@/constants/roles'
 import { useActivateBranch, useDeactivateBranch } from '../hooks/useBranches'
@@ -176,7 +177,7 @@ export function BranchProfileCard({ branch, isLoading }: BranchProfileCardProps)
         <div className="rounded-xl border border-border/60 bg-muted/10 p-3">
           <p className="text-xs text-muted-foreground">Created</p>
           <p className="mt-0.5 text-sm font-medium text-foreground">
-            {new Date(branch.createdAt).toLocaleDateString('en-US', {
+            {parseServerDate(branch.createdAt).toLocaleDateString('en-US', {
               month: 'short',
               day: 'numeric',
               year: 'numeric',
@@ -186,7 +187,7 @@ export function BranchProfileCard({ branch, isLoading }: BranchProfileCardProps)
         <div className="rounded-xl border border-border/60 bg-muted/10 p-3">
           <p className="text-xs text-muted-foreground">Last Updated</p>
           <p className="mt-0.5 text-sm font-medium text-foreground">
-            {new Date(branch.updatedAt).toLocaleDateString('en-US', {
+            {parseServerDate(branch.updatedAt).toLocaleDateString('en-US', {
               month: 'short',
               day: 'numeric',
               year: 'numeric',

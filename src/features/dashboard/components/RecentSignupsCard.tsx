@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
-import { format, isValid, parseISO } from 'date-fns'
+import { format, isValid } from 'date-fns'
+import { parseServerDate } from '@/utils/helpers/date'
 import { UserPlus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { DashboardRecentVendor } from '../types/dashboard.types'
@@ -25,7 +26,7 @@ export function RecentSignupsCard({ vendors, loading }: { vendors?: DashboardRec
           <span className="absolute bottom-4 left-[7px] top-4 w-px bg-border" aria-hidden />
           {list.map((v, i) => {
             const s = STATUS[v.status] ?? { label: v.status, cls: 'bg-muted text-muted-foreground', dot: 'bg-muted-foreground' }
-            const d = parseISO(v.registeredAt)
+            const d = parseServerDate(v.registeredAt)
             return (
               <motion.li key={v.vendorId} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.15 + i * 0.06 }} className="relative flex items-center gap-3 rounded-lg py-1.5 pl-0 pr-1">
