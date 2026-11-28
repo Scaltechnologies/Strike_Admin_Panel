@@ -19,6 +19,7 @@ import { isPaymentsTab, type PaymentsTab } from '@/features/payments/utils/payme
 import { isReportType } from '@/features/reports/utils/report-meta'
 import { isCouponsTab, type CouponsTab } from '@/features/coupons/utils/coupon-meta'
 import { isNotificationsTab, type NotificationsTab } from '@/features/notifications/utils/notify-meta'
+import { isProfileTab, type ProfileTab } from '@/features/profile/utils/profile-meta'
 import type { ReportType } from '@/features/reports/api/report-builder.api'
 
 const DashboardPage = lazy(() =>
@@ -435,10 +436,18 @@ export const adminsRoute = createRoute({
   component: AdminsRouteComponent,
 })
 
+function ProfileRouteComponent() {
+  const { tab } = profileRoute.useSearch()
+  return <ProfilePage tab={tab} />
+}
+
 export const profileRoute = createRoute({
   getParentRoute: () => protectedGroupRoute,
   path: '/profile',
-  component: ProfilePage,
+  validateSearch: (search: Record<string, unknown>): { tab?: ProfileTab } => ({
+    tab: isProfileTab(search.tab) ? search.tab : undefined,
+  }),
+  component: ProfileRouteComponent,
 })
 
 export const unauthorizedRoute = createRoute({
