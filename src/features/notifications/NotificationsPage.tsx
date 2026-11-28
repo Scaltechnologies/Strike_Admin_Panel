@@ -1,247 +1,110 @@
 import { useState } from 'react'
-import { getRouteApi } from '@tanstack/react-router'
-import {
-  Bell,
-  BarChart3,
-  History,
-  Send,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  Smartphone,
-  MessageSquare,
-  LayoutTemplate,
-  Mail,
-  MessageCircle,
-} from 'lucide-react'
-import { Timeline } from '@/components/common/Timeline'
-import { DetailTabs, type DetailTab } from '@/components/common/DetailTabs'
-import { usePersistedTab } from '@/hooks/useDetailTabs'
-import { usePermission } from '@/core/permissions/permissions'
-import { PERMISSIONS } from '@/constants/permissions'
-import { useNotificationList, useNotificationStats } from './hooks/useNotifications'
-import { NotificationLogTable } from './components/NotificationLogTable'
-import { SendNotificationModal } from './components/SendNotificationModal'
-import { SendBulkNotificationModal } from './components/SendBulkNotificationModal'
-import { NotificationStatCard } from './components/NotificationStatCard'
-import { PushPanel } from './components/push/PushPanel'
-import { InAppPanel } from './components/inapp/InAppPanel'
+import { useNavigate } from '@tanstack/react-router'
+import { motion } from 'framer-motion'
+import { Activity, BellRing, FileText, Inbox, LayoutDashboard, Send, Smartphone, Users, Workflow, Zap, type LucideIcon } from 'lucide-react'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
+import { TabError } from '@/components/common/TabError'
+import { cn } from '@/lib/utils'
+import { AnimatedNumber } from '@/features/dashboard/components/dashboard-ui'
+import { useCenterOverview } from './api/notification-center.api'
+import { ActivityFeed, DevicesList } from './components/center/ActivityAndDevices'
+import { AutomaticEvents } from './components/center/AutomaticEvents'
+import { CenterOverview } from './components/center/CenterOverview'
+import { Composer } from './components/center/Composer'
 import { TemplatesPanel } from './components/templates/TemplatesPanel'
+import type { NotificationsTab } from './utils/notify-meta'
 
-// `protectedGroupRoute` is a pathless layout route registered with `id: 'protected-group'`, so every
-// child route's TanStack Router *id* (used by getRouteApi) is prefixed with it even though the id
-// contributes no URL segment — the actual URL is still just "/notifications".
-const routeApi = getRouteApi('/protected-group/notifications')
-const PAGE_SIZE = 20
-
-const TABS: DetailTab[] = [
-  { id: 'overview', label: 'Overview', icon: BarChart3 },
-  { id: 'history', label: 'History', icon: History },
-  { id: 'bulk', label: 'Bulk Notifications', icon: Send, permission: PERMISSIONS.NOTIFICATIONS.SEND },
-  { id: 'delivery', label: 'Delivery Status', icon: CheckCircle2 },
-  { id: 'failed', label: 'Failed Deliveries', icon: XCircle },
-  { id: 'timeline', label: 'Timeline', icon: Clock },
-  { id: 'push', label: 'Push Notifications', icon: Smartphone },
-  { id: 'inapp', label: 'In-App Notifications', icon: MessageSquare },
-  { id: 'templates', label: 'Templates', icon: LayoutTemplate },
+const TABS: { id: NotificationsTab; label: string; icon: LucideIcon }[] = [
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'send', label: 'Send a message', icon: Send },
+  { id: 'automatic', label: 'Automatic', icon: Workflow },
+  { id: 'activity', label: 'Activity', icon: Activity },
+  { id: 'devices', label: 'Phones', icon: Smartphone },
+  { id: 'templates', label: 'All templates', icon: FileText },
 ]
 
-export function NotificationsPage() {
-  const { tab: urlTab } = routeApi.useSearch()
-  const navigate = routeApi.useNavigate()
-  const [activeTab, setActiveTabPersisted] = usePersistedTab('notifications', 'overview', urlTab)
-  const [page, setPage] = useState(0)
-  const [sendOpen, setSendOpen] = useState(false)
-  const [bulkOpen, setBulkOpen] = useState(false)
+function HeaderStat({ icon: Icon, label, value, hint, tone, suffix, onClick }: { icon: LucideIcon; label: string; value: number | undefined; hint?: string; tone: string; suffix?: string; onClick?: () => void }) {
+  const Comp = onClick ? 'button' : 'div'
+  return (
+    <Comp type={onClick ? 'button' : undefined} onClick={onClick}
+      className={cn('flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-left backdrop-blur-md transition-all', onClick && 'hover:-translate-y-0.5 hover:bg-white/[0.12]')}>
+      <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white shadow-lg', tone)}><Icon className="h-4 w-4" /></span>
+      <span className="min-w-0">
+        {value == null ? <span className="block text-xl font-bold leading-none text-white">—</span>
+          : <span className="block text-xl font-bold leading-none text-white"><AnimatedNumber value={value} />{suffix}</span>}
+        <span className="mt-1 block truncate text-[11px] text-white/60">{label}</span>
+        {hint && <span className="block truncate text-[10px] text-white/40">{hint}</span>}
+      </span>
+    </Comp>
+  )
+}
 
-  const canSend = usePermission(PERMISSIONS.NOTIFICATIONS.SEND)
-
-  function handleTabChange(tabId: string) {
-    setActiveTabPersisted(tabId)
-    setPage(0)
-    void navigate({ search: (prev) => ({ ...prev, tab: tabId }), replace: true })
-  }
-
-  const { data: stats, isLoading: statsLoading } = useNotificationStats()
-
-  const { data: historyData, isLoading: historyLoading, refetch: refetchHistory } = useNotificationList(
-    page,
-    PAGE_SIZE,
-    {},
-    activeTab === 'history',
-  )
-  const { data: bulkData, isLoading: bulkLoading, refetch: refetchBulk } = useNotificationList(
-    page,
-    PAGE_SIZE,
-    { type: 'ANNOUNCEMENT' },
-    activeTab === 'bulk',
-  )
-  const { data: sentData, isLoading: sentLoading, refetch: refetchSent } = useNotificationList(
-    page,
-    PAGE_SIZE,
-    { status: 'SENT' },
-    activeTab === 'delivery',
-  )
-  const { data: failedData, isLoading: failedLoading, refetch: refetchFailed } = useNotificationList(
-    page,
-    PAGE_SIZE,
-    { status: 'FAILED' },
-    activeTab === 'failed',
-  )
-  const { data: timelineData, isLoading: timelineLoading } = useNotificationList(
-    0,
-    30,
-    {},
-    activeTab === 'timeline',
-  )
+export function NotificationsPage({ tab = 'overview' }: { tab?: NotificationsTab }) {
+  const navigate = useNavigate()
+  const [days, setDays] = useState(30)
+  const overview = useCenterOverview(days)
+  const o = overview.data
+  const go = (id: NotificationsTab) => void navigate({ to: '/notifications', search: { tab: id === 'overview' ? undefined : id }, replace: true })
+  const reach = o?.reach
+  const pushReach = reach && Number(reach.customers) ? Math.round((Number(reach.customersWithPush ?? 0) / Number(reach.customers)) * 100) : undefined
 
   return (
-    <div className="flex h-full flex-col gap-6 p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">Notifications</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            SMS/Email logs, push, in-app messaging, and reusable templates across the platform
-          </p>
+    <div className="flex flex-col gap-5 p-4 sm:p-6">
+      <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+        className="relative overflow-hidden rounded-3xl bg-[#0b0c10] p-6 text-white shadow-xl shadow-black/10 sm:p-7">
+        <div className="auth-aurora pointer-events-none absolute inset-0 opacity-70" aria-hidden><span /><span /><span /></div>
+        <div className="auth-grid pointer-events-none absolute inset-0" aria-hidden />
+        <motion.span animate={{ rotate: [0, -12, 12, -6, 0] }} transition={{ repeat: Infinity, repeatDelay: 4, duration: 0.8 }}
+          className="pointer-events-none absolute -right-4 -top-4 text-white/[0.05]" aria-hidden><BellRing className="h-44 w-44" /></motion.span>
+        <div className="relative z-10 flex flex-col gap-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-300 via-[#ff4d1c] to-[#e01a00] shadow-lg shadow-orange-600/40"><BellRing className="h-6 w-6" /></span>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">Notifications</h1>
+                <p className="mt-1 max-w-xl text-sm text-white/60">Push notifications pop up on phones; in-app messages wait in the bell inside the app. Send your own, control the automatic ones, and see what reached people.</p>
+              </div>
+            </div>
+            <motion.button type="button" whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }} onClick={() => go('send')}
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#0b0c10] shadow-lg"><Send className="h-4 w-4" /> Send a message</motion.button>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
+            <HeaderStat icon={BellRing} label="Push delivered today" value={o?.push?.sent_today} hint={o ? `${o.push?.sent ?? 0} in ${days} days` : undefined} tone="bg-gradient-to-br from-[#e01a00] to-[#ff6a00]" onClick={() => go('activity')} />
+            <HeaderStat icon={Inbox} label="In-app today" value={o?.inApp?.sent_today} hint={o ? `${o.inApp?.unread_now ?? 0} unread right now` : undefined} tone="bg-gradient-to-br from-violet-500 to-fuchsia-600" onClick={() => go('activity')} />
+            <HeaderStat icon={Users} label="Customers reachable by push" value={pushReach} suffix="%" hint={reach ? `${reach.customersWithPush ?? 0} of ${reach.customers}` : undefined} tone="bg-gradient-to-br from-sky-400 to-indigo-600" onClick={() => go('devices')} />
+            <HeaderStat icon={Smartphone} label="Vendors reachable by push" value={reach ? Number(reach.vendorsWithPush ?? 0) : undefined} hint={reach ? `of ${reach.vendors} vendors` : undefined} tone="bg-gradient-to-br from-emerald-400 to-teal-600" onClick={() => go('devices')} />
+            <HeaderStat icon={Zap} label="Pushes that didn’t arrive" value={o?.push?.failed} hint={`last ${days} days`} tone="bg-gradient-to-br from-amber-400 to-orange-600" onClick={() => go('overview')} />
+          </div>
         </div>
-        {canSend && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setBulkOpen(true)}
-              className="flex items-center gap-1.5 rounded-lg border border-border px-3.5 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-            >
-              <Send className="h-4 w-4" />
-              Bulk Send
-            </button>
-            <button
-              onClick={() => setSendOpen(true)}
-              className="flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              <Bell className="h-4 w-4" />
-              Send Notification
-            </button>
-          </div>
-        )}
-      </div>
+      </motion.section>
 
-      <DetailTabs tabs={TABS} activeTab={activeTab} onChange={handleTabChange} variant="page">
-        {activeTab === 'overview' && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            <NotificationStatCard label="Total Sent" value={stats?.total} icon={Bell} color="bg-blue-100 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400" isLoading={statsLoading} />
-            <NotificationStatCard label="Delivered" value={stats?.sent} icon={CheckCircle2} color="bg-green-100 text-green-600 dark:bg-green-400/10 dark:text-green-400" isLoading={statsLoading} />
-            <NotificationStatCard label="Failed" value={stats?.failed} icon={XCircle} color="bg-red-100 text-red-600 dark:bg-red-400/10 dark:text-red-400" isLoading={statsLoading} />
-            <NotificationStatCard label="Mocked (dev)" value={stats?.mock} icon={MessageCircle} color="bg-zinc-100 text-zinc-600 dark:bg-zinc-400/10 dark:text-zinc-400" isLoading={statsLoading} />
-            <NotificationStatCard label="OTP" value={stats?.otpCount} icon={Smartphone} color="bg-violet-100 text-violet-600 dark:bg-violet-400/10 dark:text-violet-400" isLoading={statsLoading} />
-            <NotificationStatCard label="Subscription" value={stats?.subscriptionCount} icon={Mail} color="bg-amber-100 text-amber-600 dark:bg-amber-400/10 dark:text-amber-400" isLoading={statsLoading} />
-            <NotificationStatCard label="Redemption" value={stats?.redemptionCount} icon={History} color="bg-teal-100 text-teal-600 dark:bg-teal-400/10 dark:text-teal-400" isLoading={statsLoading} />
-          </div>
-        )}
+      <nav aria-label="Notification sections" className="sticky top-0 z-20 -mx-1 overflow-x-auto rounded-2xl border border-border bg-card/85 p-1.5 shadow-sm backdrop-blur-md">
+        <div role="tablist" className="flex min-w-max gap-1">
+          {TABS.map(({ id, label, icon: Icon }) => {
+            const on = tab === id
+            return (
+              <button key={id} type="button" role="tab" aria-selected={on} onClick={() => go(id)}
+                className={cn('relative flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[13px] font-medium transition-colors', on ? 'text-white' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}>
+                {on && <motion.span layoutId="ntf-tab-pill" className="absolute inset-0 rounded-xl bg-gradient-to-r from-[#e01a00] to-[#ff6a00] shadow-md shadow-red-500/25" transition={{ type: 'spring', stiffness: 480, damping: 36 }} />}
+                <Icon className="relative h-4 w-4" /><span className="relative">{label}</span>
+              </button>
+            )
+          })}
+        </div>
+      </nav>
 
-        {activeTab === 'history' && (
-          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-            <NotificationLogTable
-              data={historyData?.content ?? []}
-              isLoading={historyLoading}
-              page={page}
-              totalPages={historyData?.totalPages ?? 0}
-              totalElements={historyData?.totalElements ?? 0}
-              pageSize={PAGE_SIZE}
-              onPageChange={setPage}
-              onRefresh={() => void refetchHistory()}
-            />
-          </div>
-        )}
-
-        {activeTab === 'bulk' && (
-          <div className="flex flex-col gap-4">
-            <div className="rounded-xl border border-dashed border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-              Bulk sends target an explicit recipient list (mobile + ID + type each) — there is no
-              "send to all users" capability on the backend.{' '}
-              {canSend && (
-                <button onClick={() => setBulkOpen(true)} className="font-medium text-primary hover:underline">
-                  Start a bulk send →
-                </button>
-              )}
-            </div>
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-              <NotificationLogTable
-                data={bulkData?.content ?? []}
-                isLoading={bulkLoading}
-                page={page}
-                totalPages={bulkData?.totalPages ?? 0}
-                totalElements={bulkData?.totalElements ?? 0}
-                pageSize={PAGE_SIZE}
-                onPageChange={setPage}
-                onRefresh={() => void refetchBulk()}
-                emptyMessage="No bulk (ANNOUNCEMENT-type) notifications sent yet"
-              />
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'delivery' && (
-          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-            <NotificationLogTable
-              data={sentData?.content ?? []}
-              isLoading={sentLoading}
-              page={page}
-              totalPages={sentData?.totalPages ?? 0}
-              totalElements={sentData?.totalElements ?? 0}
-              pageSize={PAGE_SIZE}
-              onPageChange={setPage}
-              onRefresh={() => void refetchSent()}
-              emptyMessage="No successfully delivered notifications"
-            />
-          </div>
-        )}
-
-        {activeTab === 'failed' && (
-          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-            <NotificationLogTable
-              data={failedData?.content ?? []}
-              isLoading={failedLoading}
-              page={page}
-              totalPages={failedData?.totalPages ?? 0}
-              totalElements={failedData?.totalElements ?? 0}
-              pageSize={PAGE_SIZE}
-              onPageChange={setPage}
-              onRefresh={() => void refetchFailed()}
-              emptyMessage="No failed deliveries"
-              showError
-            />
-          </div>
-        )}
-
-        {activeTab === 'timeline' && (
-          <DetailTabs.Panel
-            status={timelineLoading ? 'loading' : (timelineData?.content.length ?? 0) === 0 ? 'empty' : 'ready'}
-            emptyTitle="No activity yet"
-            emptyDescription="Sent notifications will appear here chronologically."
-          >
-            <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-              <Timeline
-                entries={(timelineData?.content ?? []).map((n) => ({
-                  id: n.id,
-                  title: `${n.type} → ${n.recipientType}${n.recipientId != null ? ` #${n.recipientId}` : ''}`,
-                  description: n.message,
-                  timestamp: n.createdAt,
-                  icon: n.status === 'FAILED' ? XCircle : Bell,
-                  tone: n.status === 'FAILED' ? 'error' : n.status === 'SENT' ? 'success' : 'default',
-                }))}
-              />
-            </div>
-          </DetailTabs.Panel>
-        )}
-
-        {activeTab === 'push' && <PushPanel />}
-
-        {activeTab === 'inapp' && <InAppPanel />}
-
-        {activeTab === 'templates' && <TemplatesPanel />}
-      </DetailTabs>
-
-      <SendNotificationModal open={sendOpen} onClose={() => setSendOpen(false)} />
-      <SendBulkNotificationModal open={bulkOpen} onClose={() => setBulkOpen(false)} />
+      <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+        <ErrorBoundary key={tab} fallback={<TabError />}>
+          {tab === 'overview' && <CenterOverview data={o} loading={overview.isLoading} days={days} onDays={setDays} go={go} />}
+          {tab === 'send' && <Composer />}
+          {tab === 'automatic' && <AutomaticEvents />}
+          {tab === 'activity' && <ActivityFeed />}
+          {tab === 'devices' && <DevicesList />}
+          {tab === 'templates' && <TemplatesPanel />}
+        </ErrorBoundary>
+      </motion.div>
     </div>
   )
 }
+
+export default NotificationsPage

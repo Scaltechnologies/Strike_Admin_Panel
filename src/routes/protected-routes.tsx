@@ -18,6 +18,7 @@ import { isSettingsTab, type SettingsTab } from '@/features/settings/utils/setti
 import { isPaymentsTab, type PaymentsTab } from '@/features/payments/utils/payment-meta'
 import { isReportType } from '@/features/reports/utils/report-meta'
 import { isCouponsTab, type CouponsTab } from '@/features/coupons/utils/coupon-meta'
+import { isNotificationsTab, type NotificationsTab } from '@/features/notifications/utils/notify-meta'
 import type { ReportType } from '@/features/reports/api/report-builder.api'
 
 const DashboardPage = lazy(() =>
@@ -360,17 +361,18 @@ export const vendorImportRoute = createRoute({
   component: VendorImportPage,
 })
 
-interface NotificationsSearch {
-  tab?: string
+function NotificationsRouteComponent() {
+  const { tab } = notificationsRoute.useSearch()
+  return <NotificationsPage tab={tab} />
 }
 
 export const notificationsRoute = createRoute({
   getParentRoute: () => protectedGroupRoute,
   path: '/notifications',
-  validateSearch: (search: Record<string, unknown>): NotificationsSearch => ({
-    tab: typeof search.tab === 'string' ? search.tab : undefined,
+  validateSearch: (search: Record<string, unknown>): { tab?: NotificationsTab } => ({
+    tab: isNotificationsTab(search.tab) ? search.tab : undefined,
   }),
-  component: NotificationsPage,
+  component: NotificationsRouteComponent,
 })
 
 function ReportsRouteComponent() {
