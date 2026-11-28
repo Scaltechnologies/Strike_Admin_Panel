@@ -9,6 +9,8 @@ export interface BannerResponse {
   validFrom: string | null
   validUntil: string | null
   displayOrder: number
+  vendorId?: number | null
+  storeId?: number | null
   createdAt: string
   updatedAt: string
 }
