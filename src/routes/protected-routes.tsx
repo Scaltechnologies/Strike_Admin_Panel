@@ -14,6 +14,7 @@ import { isUserTab } from '@/features/users/utils/user-meta'
 import { isMenusTab } from '@/features/menus/utils/menu-tabs'
 import { isRedemptionsTab } from '@/features/redemptions/utils/redemption-tabs'
 import { isWithdrawalsTab, type WithdrawalsTab } from '@/features/withdrawals/utils/withdrawal-tabs'
+import { isSettingsTab, type SettingsTab } from '@/features/settings/utils/settings-meta'
 
 const DashboardPage = lazy(() =>
   import('@/features/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })),
@@ -332,10 +333,16 @@ export const reportsRoute = createRoute({
   component: ReportsPage,
 })
 
+function SettingsRouteComponent() {
+  const { tab } = settingsRoute.useSearch()
+  return <SettingsPage tab={tab} />
+}
+
 export const settingsRoute = createRoute({
   getParentRoute: () => protectedGroupRoute,
   path: '/settings',
-  component: SettingsPage,
+  validateSearch: (search: Record<string, unknown>): { tab?: SettingsTab } => ({ tab: isSettingsTab(search.tab) ? search.tab : undefined }),
+  component: SettingsRouteComponent,
 })
 
 export const auditLogsRoute = createRoute({

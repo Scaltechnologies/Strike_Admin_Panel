@@ -1,489 +1,159 @@
-import { useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
+import { motion } from 'framer-motion'
 import {
-  Sun, Moon, Monitor, Check, AlertTriangle, Percent, TrendingUp, Zap, Store, Wallet,
+  ArrowRight, BellRing, CreditCard, History, Info, LayoutGrid, Palette, Percent, Power, RefreshCw, Settings2, UtensilsCrossed, type LucideIcon,
 } from 'lucide-react'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
+import { TabError } from '@/components/common/TabError'
 import { cn } from '@/lib/utils'
-import { useTheme } from '@/core/theme/use-theme'
-import type { Theme } from '@/constants/theme'
-import { usePermission } from '@/core/permissions/permissions'
-import { PERMISSIONS } from '@/constants/permissions'
-import { ConfirmationDialog } from '@/components/common/ConfirmationDialog'
-import { formatDate } from '@/utils/helpers/date'
-import type { PaymentMode } from './types/settings.types'
-import {
-  useMaintenanceMode,
-  useUpdateMaintenanceMode,
-  usePaymentMode,
-  useUpdatePaymentMode,
-  useGlobalCommissionRate,
-  useGlobalCommissionRateHistory,
-  useUpdateGlobalCommissionRate,
-} from './hooks/useSettings'
+import { hasPermission } from '@/core/auth/auth'
+import { useAlertsStore } from '@/features/alerts/alerts-store'
+import { ApprovalSettingsPanel } from '@/features/menus/components/ApprovalSettingsPanel'
+import { useSettingsOverview, type SettingsOverview } from './api/settings-overview.api'
+import { AppAccessSection } from './components/AppAccessSection'
+import { CommissionSection } from './components/CommissionSection'
+import { AlertsSection, AppearanceSection } from './components/DeviceSections'
+import { AboutSection, HistorySection } from './components/InfoSections'
+import { OverviewSection } from './components/OverviewSection'
+import { PaymentsSection } from './components/PaymentsSection'
+import { Explain, SectionHead } from './components/SettingsBits'
+import { APPROVAL_LABEL, PAYMENT_META, healthChecks, type SettingsTab } from './utils/settings-meta'
 
-const THEME_OPTIONS: { value: Theme; label: string; icon: React.ElementType; description: string }[] = [
-  { value: 'light', label: 'Light', icon: Sun, description: 'Clean light interface' },
-  { value: 'dark', label: 'Dark', icon: Moon, description: 'Easy on the eyes' },
-  { value: 'system', label: 'System', icon: Monitor, description: 'Follows OS setting' },
+const TABS: { id: SettingsTab; label: string; icon: LucideIcon; group: 'platform' | 'you' | 'info' }[] = [
+  { id: 'overview', label: 'Overview', icon: LayoutGrid, group: 'platform' },
+  { id: 'access', label: 'App access', icon: Power, group: 'platform' },
+  { id: 'payments', label: 'Payments', icon: CreditCard, group: 'platform' },
+  { id: 'commission', label: 'Commission', icon: Percent, group: 'platform' },
+  { id: 'menus', label: 'Menu approvals', icon: UtensilsCrossed, group: 'platform' },
+  { id: 'alerts', label: 'Alerts & sounds', icon: BellRing, group: 'you' },
+  { id: 'appearance', label: 'Appearance', icon: Palette, group: 'you' },
+  { id: 'history', label: 'Change history', icon: History, group: 'info' },
+  { id: 'about', label: 'About', icon: Info, group: 'info' },
 ]
 
-const DEFAULT_MAINTENANCE_MESSAGE = "App is in maintenance, we'll be back soon."
-
-function SectionCard({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
+function HeroChip({ label, value, tone, pulse, onClick }: { label: string; value: string; tone: string; pulse?: boolean; onClick: () => void }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-      <div className="mb-5">
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-        <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
-      </div>
-      {children}
+    <button type="button" onClick={onClick}
+      className="group flex min-w-0 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-left backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white/[0.12]">
+      <span className="relative flex h-2.5 w-2.5 shrink-0">
+        {pulse && <span className={cn('absolute inline-flex h-full w-full animate-ping rounded-full opacity-70', tone)} />}
+        <span className={cn('relative inline-flex h-2.5 w-2.5 rounded-full', tone)} />
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-sm font-semibold text-white">{value}</span>
+        <span className="block truncate text-[11px] text-white/55">{label}</span>
+      </span>
+    </button>
+  )
+}
+
+function MenusTab({ data }: { data: SettingsOverview | undefined }) {
+  const allowed = hasPermission('SEC_MENUS')
+  return (
+    <div className="flex flex-col gap-4">
+      <SectionHead icon={UtensilsCrossed} tone="bg-gradient-to-br from-amber-400 to-orange-600 shadow-orange-500/30" title="Menu approvals"
+        body="Decide whether store owners and managers need your approval before menu changes go live in the customer app."
+        right={data && data.menuApproval.pending > 0 ? (
+          <Link to="/menus" search={{ tab: 'approvals' }} className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-amber-600">
+            {data.menuApproval.pending} waiting for you <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        ) : undefined} />
+      {allowed ? <ApprovalSettingsPanel /> : (
+        <Explain icon={Info} tone="warn">You don&apos;t have access to Menus, so you can&apos;t change this. Currently: <b>{data ? APPROVAL_LABEL[data.menuApproval.mode] : '…'}</b>.</Explain>
+      )}
     </div>
   )
 }
 
-function MaintenanceModeCard() {
-  const canEdit = usePermission(PERMISSIONS.SETTINGS.EDIT)
-  const { data: setting, isLoading } = useMaintenanceMode()
-  const { mutate: updateMaintenanceMode, isPending } = useUpdateMaintenanceMode()
-
-  const [showConfirm, setShowConfirm] = useState(false)
-
-  const maintenanceOn = setting?.settingValue === 'true'
-
-  function handleEnable() {
-    updateMaintenanceMode(true, { onSuccess: () => setShowConfirm(false) })
-  }
-
-  function handleDisable() {
-    updateMaintenanceMode(false)
+export function SettingsPage({ tab = 'overview' }: { tab?: SettingsTab }) {
+  const navigate = useNavigate()
+  const overview = useSettingsOverview()
+  const o = overview.data
+  const sound = useAlertsStore((s) => s.settings.sound)
+  const issues = healthChecks(o, sound).filter((h) => h.level !== 'info').length
+  const go = (id: SettingsTab) => {
+    void navigate({ to: '/settings', search: { tab: id === 'overview' ? undefined : id }, replace: true })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   return (
-    <SectionCard
-      title="Maintenance Mode"
-      description="Block user and vendor app access while you work on the backend"
-    >
-      {isLoading ? (
-        <div className="h-20 animate-pulse rounded-lg bg-muted" />
-      ) : (
-        <>
-          <div
-            className={cn(
-              'flex items-center justify-between gap-4 rounded-lg border p-4',
-              maintenanceOn
-                ? 'border-destructive/30 bg-destructive/5'
-                : 'border-border bg-muted/20',
-            )}
-          >
-            <div className="flex items-start gap-3">
-              <div
-                className={cn(
-                  'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
-                  maintenanceOn ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground',
-                )}
-              >
-                <AlertTriangle className="h-4 w-4" aria-hidden />
-              </div>
+    <div className="flex flex-col gap-5 p-4 sm:p-6">
+      <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+        className="relative overflow-hidden rounded-3xl bg-[#0b0c10] p-6 text-white shadow-xl shadow-black/10 sm:p-7">
+        <div className="auth-aurora pointer-events-none absolute inset-0 opacity-70" aria-hidden><span /><span /><span /></div>
+        <div className="auth-grid pointer-events-none absolute inset-0" aria-hidden />
+        <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 60, ease: 'linear' }}
+          className="pointer-events-none absolute -right-8 -top-8 text-white/[0.05]" aria-hidden>
+          <Settings2 className="h-48 w-48" />
+        </motion.span>
+        <div className="relative z-10 flex flex-col gap-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-200 via-slate-400 to-slate-700 shadow-lg shadow-slate-500/40"><Settings2 className="h-6 w-6" /></span>
               <div>
-                <p className="text-sm font-semibold text-foreground">
-                  {maintenanceOn ? 'Maintenance mode is ON' : 'Maintenance mode is OFF'}
-                </p>
-                <p className="mt-0.5 max-w-md text-xs text-muted-foreground">
-                  {maintenanceOn
-                    ? `User and vendor apps are showing: "${DEFAULT_MAINTENANCE_MESSAGE}"`
-                    : 'User and vendor apps are accessible normally.'}
-                </p>
+                <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+                <p className="mt-1 max-w-xl text-sm text-white/60">The switches that control the whole Strike platform — app access, payments, commission and menu approvals — plus your own preferences.</p>
               </div>
             </div>
-
-            {canEdit && (
-              <button
-                type="button"
-                role="switch"
-                aria-checked={maintenanceOn}
-                onClick={() => (maintenanceOn ? handleDisable() : setShowConfirm(true))}
-                disabled={isPending}
-                className={cn(
-                  'relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50',
-                  maintenanceOn ? 'bg-destructive' : 'bg-muted-foreground/30',
-                )}
-              >
-                <span
-                  className={cn(
-                    'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform',
-                    maintenanceOn ? 'translate-x-5' : 'translate-x-0.5',
-                  )}
-                />
-              </button>
-            )}
+            <button type="button" onClick={() => void overview.refetch()} aria-label="Refresh"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-white/80 transition-colors hover:bg-white/15">
+              <RefreshCw className={cn('h-4 w-4', overview.isFetching && 'animate-spin')} />
+            </button>
           </div>
-
-          {!canEdit && (
-            <p className="mt-3 text-xs text-muted-foreground">
-              You don't have permission to change maintenance mode.
-            </p>
-          )}
-        </>
-      )}
-
-      <ConfirmationDialog
-        open={showConfirm}
-        title="Enable maintenance mode?"
-        description={`This will immediately block access to the user and vendor apps, showing: "${DEFAULT_MAINTENANCE_MESSAGE}". Only the admin panel stays accessible.`}
-        confirmLabel="Enable maintenance mode"
-        variant="destructive"
-        onConfirm={handleEnable}
-        onCancel={() => setShowConfirm(false)}
-        isLoading={isPending}
-      />
-    </SectionCard>
-  )
-}
-
-const PAYMENT_MODE_OPTIONS: {
-  value: PaymentMode
-  label: string
-  description: string
-  icon: React.ElementType
-}[] = [
-  { value: 'BOTH', label: 'Both enabled', description: 'Online payment and Pay at Store', icon: Wallet },
-  { value: 'ONLINE_ONLY', label: 'Online only', description: 'Pay at Store is hidden platform-wide', icon: Zap },
-  { value: 'PAY_AT_STORE_ONLY', label: 'Pay at Store only', description: 'Online (Razorpay) checkout is disabled', icon: Store },
-]
-
-function PaymentModeCard() {
-  const canEdit = usePermission(PERMISSIONS.SETTINGS.EDIT)
-  const { data: setting, isLoading } = usePaymentMode()
-  const { mutate: updatePaymentMode, isPending } = useUpdatePaymentMode()
-
-  const [pendingMode, setPendingMode] = useState<PaymentMode | null>(null)
-
-  const currentMode = setting?.paymentMode ?? 'BOTH'
-
-  function handleSelect(mode: PaymentMode) {
-    if (mode === currentMode || isPending) return
-    // BOTH only ever restores availability — nothing is being taken away, so it doesn't need
-    // the same "are you sure" as the other two, which each disable a real payment path for
-    // every user/vendor on the platform immediately.
-    if (mode === 'BOTH') {
-      updatePaymentMode(mode)
-    } else {
-      setPendingMode(mode)
-    }
-  }
-
-  function handleConfirm() {
-    if (!pendingMode) return
-    updatePaymentMode(pendingMode, { onSuccess: () => setPendingMode(null) })
-  }
-
-  const pendingOption = PAYMENT_MODE_OPTIONS.find((o) => o.value === pendingMode)
-
-  return (
-    <SectionCard
-      title="Payment Mode"
-      description="Choose which payment method(s) checkout accepts across the user app — use this to run on Pay at Store only until Razorpay's live keys are ready"
-    >
-      {isLoading ? (
-        <div className="h-20 animate-pulse rounded-lg bg-muted" />
-      ) : (
-        <>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {PAYMENT_MODE_OPTIONS.map((opt) => {
-              const Icon = opt.icon
-              const active = currentMode === opt.value
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  disabled={!canEdit || isPending}
-                  onClick={() => handleSelect(opt.value)}
-                  className={cn(
-                    'relative flex flex-col items-start gap-2 rounded-xl border-2 p-4 text-left transition-all disabled:cursor-not-allowed disabled:opacity-60',
-                    active
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border bg-card hover:border-border/80 hover:bg-muted/50',
-                  )}
-                >
-                  {active && (
-                    <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                      <Check className="h-2.5 w-2.5" />
-                    </span>
-                  )}
-                  <div
-                    className={cn(
-                      'flex h-9 w-9 items-center justify-center rounded-lg',
-                      active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
-                    )}
-                  >
-                    <Icon className="h-4 w-4" aria-hidden />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{opt.label}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">{opt.description}</p>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-
-          {!canEdit && (
-            <p className="mt-3 text-xs text-muted-foreground">
-              You don't have permission to change the payment mode.
-            </p>
-          )}
-        </>
-      )}
-
-      <ConfirmationDialog
-        open={pendingMode != null}
-        title={`Switch to "${pendingOption?.label}"?`}
-        description={
-          pendingMode === 'ONLINE_ONLY'
-            ? 'This immediately hides Pay at Store as a checkout option for every user, platform-wide. Vendors will stop receiving new Pay-at-Store orders until this is changed back.'
-            : 'This immediately disables Razorpay checkout for every user, platform-wide. Every purchase will go through Pay at Store until this is changed back.'
-        }
-        confirmLabel="Switch mode"
-        variant="destructive"
-        onConfirm={handleConfirm}
-        onCancel={() => setPendingMode(null)}
-        isLoading={isPending}
-      />
-    </SectionCard>
-  )
-}
-
-function DefaultCommissionCard() {
-  const canEdit = usePermission(PERMISSIONS.SETTINGS.EDIT)
-  const [historyPage, setHistoryPage] = useState(0)
-  const [showRateDialog, setShowRateDialog] = useState(false)
-  const [rateInput, setRateInput] = useState('')
-  const [rateError, setRateError] = useState('')
-
-  const { data: rate, isLoading: rateLoading } = useGlobalCommissionRate()
-  const { data: history, isLoading: historyLoading } = useGlobalCommissionRateHistory(historyPage)
-  const { mutate: updateRate, isPending: updatingRate } = useUpdateGlobalCommissionRate()
-
-  function openDialog() {
-    setRateInput(String(Number(rate?.globalCommissionRate ?? 0).toFixed(2)))
-    setRateError('')
-    setShowRateDialog(true)
-  }
-
-  function handleConfirm() {
-    const value = parseFloat(rateInput)
-    if (isNaN(value) || value < 0 || value > 100) {
-      setRateError('Rate must be between 0 and 100')
-      return
-    }
-    updateRate(value, { onSuccess: () => setShowRateDialog(false) })
-  }
-
-  return (
-    <SectionCard
-      title="Default Commission Rate"
-      description="Platform-wide commission percentage applied to card purchases, unless a vendor has a custom rate"
-    >
-      <div className="flex items-center justify-between rounded-lg border border-border bg-muted/20 p-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <Percent className="h-5 w-5" aria-hidden />
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Current default rate</p>
-            {rateLoading ? (
-              <div className="mt-1 h-7 w-16 animate-pulse rounded bg-muted" />
-            ) : (
-              <p className="text-2xl font-bold text-foreground">
-                {Number(rate?.globalCommissionRate ?? 0).toFixed(2)}%
-              </p>
-            )}
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
+            <HeroChip label="Customer & vendor apps" value={!o ? '…' : o.maintenance.on ? 'Closed' : 'Open'} tone={o?.maintenance.on ? 'bg-red-500' : 'bg-emerald-400'} pulse onClick={() => go('access')} />
+            <HeroChip label="Payments" value={!o ? '…' : PAYMENT_META[o.paymentMode.mode]?.short ?? o.paymentMode.mode} tone="bg-sky-400" onClick={() => go('payments')} />
+            <HeroChip label="Default commission" value={!o ? '…' : `${Number(o.commission.rate)}%`} tone="bg-orange-400" onClick={() => go('commission')} />
+            <HeroChip label="Menu approvals" value={!o ? '…' : APPROVAL_LABEL[o.menuApproval.mode]} tone="bg-amber-400" onClick={() => go('menus')} />
+            <HeroChip label="Health check" value={!o ? '…' : issues ? `${issues} to look at` : 'All good'} tone={issues ? 'bg-amber-400' : 'bg-emerald-400'} pulse={issues > 0} onClick={() => go('overview')} />
           </div>
         </div>
-        {canEdit && (
-          <button
-            onClick={openDialog}
-            className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Update Rate
-          </button>
-        )}
-      </div>
+      </motion.section>
 
-      <p className="mt-3 text-xs text-muted-foreground">
-        Example: at {Number(rate?.globalCommissionRate ?? 0).toFixed(2)}%, a ₹3,000 card purchase earns the
-        platform ₹{((3000 * Number(rate?.globalCommissionRate ?? 0)) / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 })}.
-      </p>
+      {overview.isError && !o && (
+        <Explain icon={Info} tone="danger">Couldn&apos;t load the settings. Check your connection and press refresh.</Explain>
+      )}
 
-      <div className="mt-5">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Rate Change History
-        </p>
-        {historyLoading ? (
-          <div className="space-y-2">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-10 animate-pulse rounded-lg bg-muted" />
-            ))}
-          </div>
-        ) : !history?.content.length ? (
-          <p className="py-4 text-center text-sm text-muted-foreground">No rate history.</p>
-        ) : (
-          <div className="space-y-2">
-            {history.content.map((h) => (
-              <div
-                key={h.id}
-                className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5"
-              >
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" aria-hidden />
-                  <span className="text-sm">
-                    <span className="text-muted-foreground line-through">{h.oldRate ?? '—'}%</span>
-                    {' → '}
-                    <span className="font-semibold text-foreground">{Number(h.newRate).toFixed(2)}%</span>
-                  </span>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-muted-foreground">{formatDate(h.createdAt)}</p>
-                  {h.changedByEmail && <p className="text-xs text-muted-foreground">{h.changedByEmail}</p>}
-                </div>
+      <nav aria-label="Settings sections" className="sticky top-0 z-20 -mx-1 overflow-x-auto rounded-2xl border border-border bg-card/85 p-1.5 shadow-sm backdrop-blur-md">
+        <div role="tablist" className="flex min-w-max items-center gap-1">
+          {TABS.map(({ id, label, icon: Icon, group }, i) => {
+            const on = tab === id
+            const showDivider = i > 0 && TABS[i - 1].group !== group
+            return (
+              <div key={id} className="flex items-center gap-1">
+                {showDivider && <span className="mx-1 h-5 w-px bg-border" aria-hidden />}
+                <button type="button" role="tab" aria-selected={on} onClick={() => go(id)}
+                  className={cn('relative flex items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-medium transition-colors', on ? 'text-white' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}>
+                  {on && <motion.span layoutId="settings-tab-pill" className="absolute inset-0 rounded-xl bg-gradient-to-r from-[#e01a00] to-[#ff6a00] shadow-md shadow-red-500/25" transition={{ type: 'spring', stiffness: 480, damping: 36 }} />}
+                  <Icon className="relative h-4 w-4" />
+                  <span className="relative">{label}</span>
+                  {id === 'access' && o?.maintenance.on && <span className="relative h-2 w-2 rounded-full bg-red-500 ring-2 ring-card" />}
+                  {id === 'menus' && (o?.menuApproval.pending ?? 0) > 0 && (
+                    <span className={cn('relative rounded-full px-1.5 text-[10px] font-bold tabular-nums', on ? 'bg-white/25 text-white' : 'bg-amber-500 text-white')}>{o!.menuApproval.pending}</span>
+                  )}
+                </button>
               </div>
-            ))}
-          </div>
-        )}
-        {history && history.totalPages > 1 && (
-          <div className="mt-3 flex items-center justify-center gap-2">
-            <button
-              onClick={() => setHistoryPage((p) => Math.max(0, p - 1))}
-              disabled={historyPage === 0}
-              className="rounded border border-border px-2 py-1 text-xs disabled:opacity-40 hover:bg-muted"
-            >
-              Prev
-            </button>
-            <span className="text-xs text-muted-foreground">
-              {historyPage + 1} / {history.totalPages}
-            </span>
-            <button
-              onClick={() => setHistoryPage((p) => Math.min(history.totalPages - 1, p + 1))}
-              disabled={historyPage >= history.totalPages - 1}
-              className="rounded border border-border px-2 py-1 text-xs disabled:opacity-40 hover:bg-muted"
-            >
-              Next
-            </button>
-          </div>
-        )}
-      </div>
-
-      <ConfirmationDialog
-        open={showRateDialog}
-        title="Update default commission rate"
-        description="This applies to every vendor without a custom commission rate."
-        confirmLabel="Update"
-        onConfirm={handleConfirm}
-        onCancel={() => { setShowRateDialog(false); setRateError('') }}
-        isLoading={updatingRate}
-      >
-        <div className="mt-1">
-          <label className="text-xs font-medium text-muted-foreground">New Rate (%)</label>
-          <input
-            type="number"
-            min={0}
-            max={100}
-            step={0.01}
-            value={rateInput}
-            onChange={(e) => { setRateInput(e.target.value); setRateError('') }}
-            className={cn(
-              'mt-1.5 block w-full rounded-lg border bg-card px-3 py-2 text-sm',
-              'focus:outline-none focus:ring-2 focus:ring-ring',
-              rateError ? 'border-destructive' : 'border-border',
-            )}
-          />
-          {rateError && <p className="mt-1 text-xs text-destructive">{rateError}</p>}
+            )
+          })}
         </div>
-      </ConfirmationDialog>
-    </SectionCard>
-  )
-}
+      </nav>
 
-export function SettingsPage() {
-  const { theme, setTheme } = useTheme()
-
-  return (
-    <div className="flex h-full flex-col gap-6 p-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl font-semibold text-foreground">Settings</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">Manage your preferences and application settings</p>
-      </div>
-
-      <div className="max-w-2xl space-y-6">
-        {/* Maintenance Mode */}
-        <MaintenanceModeCard />
-
-        {/* Payment Mode */}
-        <PaymentModeCard />
-
-        {/* Default Commission Rate */}
-        <DefaultCommissionCard />
-
-        {/* Appearance */}
-        <SectionCard
-          title="Appearance"
-          description="Customize how the admin panel looks on your device"
-        >
-          <div className="grid grid-cols-3 gap-3">
-            {THEME_OPTIONS.map((opt) => {
-              const Icon = opt.icon
-              const active = theme === opt.value
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setTheme(opt.value)}
-                  className={cn(
-                    'relative flex flex-col items-center gap-2.5 rounded-xl border-2 p-4 text-center transition-all',
-                    active
-                      ? 'border-primary bg-primary/5 text-primary'
-                      : 'border-border bg-card text-muted-foreground hover:border-border/80 hover:bg-muted/50',
-                  )}
-                >
-                  {active && (
-                    <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                      <Check className="h-2.5 w-2.5" />
-                    </span>
-                  )}
-                  <Icon className="h-6 w-6" />
-                  <div>
-                    <p className="text-xs font-semibold">{opt.label}</p>
-                    <p className="mt-0.5 text-[10px] text-muted-foreground">{opt.description}</p>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-        </SectionCard>
-
-        {/* About */}
-        <SectionCard
-          title="About"
-          description="Application version and environment information"
-        >
-          <div className="space-y-3 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Application</span>
-              <span className="font-medium text-foreground">Strike Admin Panel</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Backend</span>
-              <span className="font-medium text-foreground">Spring Boot Microservices</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">UI Framework</span>
-              <span className="font-medium text-foreground">React 19 + Vite + TanStack</span>
-            </div>
-          </div>
-        </SectionCard>
-      </div>
+      <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+        <ErrorBoundary key={tab} fallback={<TabError />}>
+          {tab === 'overview' && <OverviewSection data={o} loading={overview.isLoading} go={go} />}
+          {tab === 'access' && <AppAccessSection data={o} />}
+          {tab === 'payments' && <PaymentsSection data={o} />}
+          {tab === 'commission' && <CommissionSection data={o} />}
+          {tab === 'menus' && <MenusTab data={o} />}
+          {tab === 'alerts' && <AlertsSection />}
+          {tab === 'appearance' && <AppearanceSection />}
+          {tab === 'history' && <HistorySection data={o} />}
+          {tab === 'about' && <AboutSection />}
+        </ErrorBoundary>
+      </motion.div>
     </div>
   )
 }
+
+export default SettingsPage
