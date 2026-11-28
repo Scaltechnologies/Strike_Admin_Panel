@@ -17,6 +17,7 @@ import { isWithdrawalsTab, type WithdrawalsTab } from '@/features/withdrawals/ut
 import { isSettingsTab, type SettingsTab } from '@/features/settings/utils/settings-meta'
 import { isPaymentsTab, type PaymentsTab } from '@/features/payments/utils/payment-meta'
 import { isReportType } from '@/features/reports/utils/report-meta'
+import { isCouponsTab, type CouponsTab } from '@/features/coupons/utils/coupon-meta'
 import type { ReportType } from '@/features/reports/api/report-builder.api'
 
 const DashboardPage = lazy(() =>
@@ -271,10 +272,31 @@ export const redemptionDetailRoute = createRoute({
   component: RedemptionDetailRouteComponent,
 })
 
+function CouponsRouteComponent() {
+  const { tab } = couponsRoute.useSearch()
+  return <CouponsPage tab={tab} />
+}
+
 export const couponsRoute = createRoute({
   getParentRoute: () => protectedGroupRoute,
   path: '/coupons',
-  component: CouponsPage,
+  validateSearch: (search: Record<string, unknown>): { tab?: CouponsTab } => ({ tab: isCouponsTab(search.tab) ? search.tab : undefined }),
+  component: CouponsRouteComponent,
+})
+
+const CouponDetailPage = lazy(() =>
+  import('@/features/coupons/CouponDetailPage').then((m) => ({ default: m.CouponDetailPage })),
+)
+
+function CouponDetailRouteComponent() {
+  const { couponId } = couponDetailRoute.useParams()
+  return <CouponDetailPage key={couponId} couponId={Number(couponId)} />
+}
+
+export const couponDetailRoute = createRoute({
+  getParentRoute: () => protectedGroupRoute,
+  path: '/coupons/$couponId',
+  component: CouponDetailRouteComponent,
 })
 
 export const bannersRoute = createRoute({
