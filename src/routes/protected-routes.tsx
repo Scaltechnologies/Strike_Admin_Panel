@@ -16,6 +16,8 @@ import { isRedemptionsTab } from '@/features/redemptions/utils/redemption-tabs'
 import { isWithdrawalsTab, type WithdrawalsTab } from '@/features/withdrawals/utils/withdrawal-tabs'
 import { isSettingsTab, type SettingsTab } from '@/features/settings/utils/settings-meta'
 import { isPaymentsTab, type PaymentsTab } from '@/features/payments/utils/payment-meta'
+import { isReportType } from '@/features/reports/utils/report-meta'
+import type { ReportType } from '@/features/reports/api/report-builder.api'
 
 const DashboardPage = lazy(() =>
   import('@/features/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })),
@@ -349,10 +351,22 @@ export const notificationsRoute = createRoute({
   component: NotificationsPage,
 })
 
+function ReportsRouteComponent() {
+  const { report, from, to } = reportsRoute.useSearch()
+  return <ReportsPage report={report} from={from} to={to} />
+}
+
+const isDay = (v: unknown): v is string => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)
+
 export const reportsRoute = createRoute({
   getParentRoute: () => protectedGroupRoute,
   path: '/reports',
-  component: ReportsPage,
+  validateSearch: (search: Record<string, unknown>): { report?: ReportType; from?: string; to?: string } => ({
+    report: isReportType(search.report) ? search.report : undefined,
+    from: isDay(search.from) ? search.from : undefined,
+    to: isDay(search.to) ? search.to : undefined,
+  }),
+  component: ReportsRouteComponent,
 })
 
 function SettingsRouteComponent() {
